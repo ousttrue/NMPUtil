@@ -186,46 +186,49 @@ namespace NUtil.MsgPack
 
         public void Pack(String s, Encoding e)
         {
-            Pack(e.GetBytes(s));
-        }
-       
-        public void Pack(IEnumerable<Byte> bytes)
-        {
-            int size = bytes.Count();
+            var bytes = e.GetBytes(s);
+            var size = (UInt32)bytes.Count();
             if (size < 32)
             {
-                Writer.Write((Byte)(MsgPackFormat.FIX_RAW.Mask() | size));
-                foreach (Byte b in bytes)
-                {
-                    Writer.Write(b);
-                }
+                Writer.Write((Byte)(MsgPackFormat.FIX_STR.Mask() | size));
             }
-            else if (size < 0xFFFF)
+            else if (size <= Byte.MaxValue)
             {
-                Writer.Write(MsgPackFormat.RAW16.Mask());
-                Writer.Write((Byte)(size >> 8 & 0xff));
+                Writer.Write(MsgPackFormat.STR8.Mask());
                 Writer.Write((Byte)(size & 0xff));
-                foreach (Byte b in bytes)
-                {
-                    Writer.Write(b);
-                }
             }
-            else if (size < Int32.MaxValue)
+            else if (size <= UInt16.MaxValue)
             {
-                Writer.Write(MsgPackFormat.RAW32.Mask());
-                Writer.Write((Byte)(size >> 24 & 0xff));
-                Writer.Write((Byte)(size >> 16 & 0xff));
-                Writer.Write((Byte)(size >> 8 & 0xff));
-                Writer.Write((Byte)(size & 0xff));
-                foreach (Byte b in bytes)
-                {
-                    Writer.Write(b);
-                }
+                Writer.Write(MsgPackFormat.STR16.Mask());
+                Writer.Write((UInt16)size);
             }
             else
             {
-                throw new NotImplementedException("not implemented");
+                Writer.Write(MsgPackFormat.STR32.Mask());
+                Writer.Write(size);
             }
+            Writer.Write(bytes);
+        }
+
+        public void Pack(IEnumerable<Byte> bytes)
+        {
+            var size = (UInt32)bytes.Count();
+            if (size <= Byte.MaxValue)
+            {
+                Writer.Write(MsgPackFormat.BIN8.Mask());
+                Writer.Write((Byte)(size & 0xff));
+            }
+            else if (size <= UInt16.MaxValue)
+            {
+                Writer.Write(MsgPackFormat.BIN16.Mask());
+                Writer.Write((UInt16)size);
+            }
+            else
+            {
+                Writer.Write(MsgPackFormat.BIN32.Mask());
+                Writer.Write(size);
+            }
+            Writer.Write(bytes.ToArray());
         }
 
         public void Pack_Array(Int32 n)

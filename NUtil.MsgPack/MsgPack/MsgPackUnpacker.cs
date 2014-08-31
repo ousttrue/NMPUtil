@@ -141,7 +141,7 @@ namespace NUtil.MsgPack
             return BitConverter.ToDouble(b.ToArray(), 0);
         }
 
-        IEnumerable<Byte> ReadBytes(int size)
+        IEnumerable<Byte> ReadBytes(Int32 size)
         {
             var b = _view.Skip(Pos).Take(size);
             Advance(size);
@@ -198,13 +198,19 @@ namespace NUtil.MsgPack
             }
         }
 
-        // for array / map / raw
-        public Int32 MemberCount
+        // for array / map / str / bin
+        public UInt32 MemberCount
         {
             get;
             private set;
         }
         #endregion
+
+        public Encoding StrEncoding
+        {
+            get;
+            set;
+        }
 
         public MsgPackUnpacker(IEnumerable<Byte> bytes)
             : this(new ArraySegment<Byte>(bytes.ToArray()))
@@ -216,6 +222,7 @@ namespace NUtil.MsgPack
 
         public MsgPackUnpacker(ArraySegment<Byte> view)
         {
+            this.StrEncoding = Encoding.UTF8;
             this._view = view;
             ReadByte();
 
@@ -238,13 +245,35 @@ namespace NUtil.MsgPack
                     Format = t;
                     return;
 
-                case MsgPackFormat.RAW16:
+                case MsgPackFormat.BIN8:
+                    Format = t;
+                    MemberCount = ReadByte();
+                    return;
+
+                case MsgPackFormat.BIN16:
                     Format = t;
                     MemberCount = ReadUInt16();
                     return;
 
-                case MsgPackFormat.RAW32:
-                    throw new NotImplementedException();
+                case MsgPackFormat.BIN32:
+                    Format = t;
+                    MemberCount = ReadUInt32();
+                    return;
+
+                case MsgPackFormat.STR8:
+                    Format = t;
+                    MemberCount = ReadByte();
+                    return;
+
+                case MsgPackFormat.STR16:
+                    Format = t;
+                    MemberCount = ReadUInt16();
+                    return;
+
+                case MsgPackFormat.STR32:
+                    Format = t;
+                    MemberCount = ReadUInt32();
+                    return;
 
                 case MsgPackFormat.ARRAY16:
                     Format = t;
@@ -263,30 +292,30 @@ namespace NUtil.MsgPack
                     throw new NotImplementedException();
             }
 
-            if (HeadByte <= 0x7F)
+            if (HeadByte < MsgPackFormat.FIX_MAP.Mask())
             {
                 Format = MsgPackFormat.POSITIVE_FIXNUM;
                 return;
             }
-            else if (HeadByte <= 0x8F)
+            else if (HeadByte < MsgPackFormat.FIX_ARRAY.Mask())
             {
                 Format = MsgPackFormat.FIX_MAP;
-                MemberCount = (HeadByte & Convert.ToByte("00001111", 2));
+                MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
                 return;
             }
-            else if (HeadByte <= 0x9F)
+            else if (HeadByte < MsgPackFormat.FIX_STR.Mask())
             {
                 Format = MsgPackFormat.FIX_ARRAY;
-                MemberCount = (HeadByte & Convert.ToByte("00001111", 2));
+                MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
                 return;
             }
-            else if (HeadByte <= 0xBF)
+            else if (HeadByte < MsgPackFormat.NIL.Mask())
             {
-                Format = MsgPackFormat.FIX_RAW;
-                MemberCount = (HeadByte & Convert.ToByte("00011111", 2));
+                Format = MsgPackFormat.FIX_STR;
+                MemberCount = (UInt32)(HeadByte & Convert.ToByte("00011111", 2));
                 return;
             }
-            else if (HeadByte >= 0xE0)
+            else if (HeadByte >= MsgPackFormat.NEGATIVE_FIXNUM.Mask())
             {
                 Format = MsgPackFormat.NEGATIVE_FIXNUM;
                 return;
@@ -373,12 +402,23 @@ namespace NUtil.MsgPack
                     }
                     break;
 
-                // raw
-                case MsgPackFormat.FIX_RAW:
-                case MsgPackFormat.RAW16:
-                case MsgPackFormat.RAW32:
+                // str
+                case MsgPackFormat.FIX_STR:
+                case MsgPackFormat.STR8:
+                case MsgPackFormat.STR16:
+                case MsgPackFormat.STR32:
                     {
-                        var buf = ReadBytes(MemberCount);
+                        var buf = ReadBytes((Int32)MemberCount);
+                        v = (T)Convert.ChangeType(StrEncoding.GetString(buf.ToArray()), t);
+                    }
+                    break;
+
+                // bin
+                case MsgPackFormat.BIN8:
+                case MsgPackFormat.BIN16:
+                case MsgPackFormat.BIN32:
+                    {
+                        var buf = ReadBytes((Int32)MemberCount);
                         if (t == typeof(String))
                         {
                             v = (T)Convert.ChangeType(Encoding.UTF8.GetString(buf.ToArray()), t);
@@ -425,20 +465,20 @@ namespace NUtil.MsgPack
         }
 
         #region UnpackArray
-        public delegate void UnpackArrayType(ref Object dst, MsgPackUnpacker u, Int32 count);
+        public delegate void UnpackArrayType(ref Object dst, MsgPackUnpacker u, UInt32 count);
         static public Dictionary<Type, UnpackArrayType> UnpackArrayMap =
             new Dictionary<Type, UnpackArrayType>
         {
             {
                   typeof(Array)
-                , (ref Object o, MsgPackUnpacker unpacker, Int32 count)=>
+                , (ref Object o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var target = o as Object[];
                     if(target.Length<count){
                         throw new InvalidOperationException();
                     }
-                    for (int i = 0; i < count; ++i)
+                    for (uint i = 0; i < count; ++i)
                     {
                         var sub = unpacker.GetSubUnpacker();
                         if (sub.IsArray)
@@ -462,11 +502,11 @@ namespace NUtil.MsgPack
 
             , {
                 typeof(IList<Object>)
-                , (ref Object o, MsgPackUnpacker unpacker, Int32 count)=>
+                , (ref Object o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var target = o as IList<Object>;
-                    for (int i = 0; i < count; ++i)
+                    for (uint i = 0; i < count; ++i)
                     {
                         Object val;
                         {
@@ -514,17 +554,17 @@ namespace NUtil.MsgPack
         #endregion
 
         #region UnpackMap
-        public delegate void UnpackMapType(ref Object dst, MsgPackUnpacker u, Int32 count);
+        public delegate void UnpackMapType(ref Object dst, MsgPackUnpacker u, UInt32 count);
         static public Dictionary<Type, UnpackMapType> UnpackMapMap =
             new Dictionary<Type, UnpackMapType>
         {
             {
                 typeof(IDictionary<String, Object>)
-                , (ref Object o, MsgPackUnpacker unpacker, Int32 count)=>
+                , (ref Object o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var target = o as IDictionary<String, Object>;
-                    for (int i = 0; i < count; ++i)
+                    for (uint i = 0; i < count; ++i)
                     {
                         var key=String.Empty;
                         {
@@ -558,11 +598,11 @@ namespace NUtil.MsgPack
             
             , {
                 typeof(IDictionary<Object, Object>)
-                , (ref Object o, MsgPackUnpacker unpacker, Int32 count)=>
+                , (ref Object o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var target = o as IDictionary<Object, Object>;
-                    for (int i = 0; i < count; ++i)
+                    for (uint i = 0; i < count; ++i)
                     {
                         var key=String.Empty;
                         {
@@ -596,11 +636,11 @@ namespace NUtil.MsgPack
 
             , {
                   typeof(Object)
-                , (ref Object o, MsgPackUnpacker unpacker, Int32 count)=>
+                , (ref Object o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var type = o.GetType();
-                    for (Int32 i = 0; i < count; ++i)
+                    for (UInt32 i = 0; i < count; ++i)
                     {
                         String key = "";
                         {

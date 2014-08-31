@@ -37,9 +37,9 @@ namespace UnitTest
             var dst = new Dictionary<String, Object>();
             unpacker.Unpack(ref dst);
 
-            Assert.AreEqual(src.Name, Encoding.UTF8.GetString(dst["Name"] as Byte[]));
+            Assert.AreEqual(src.Name, dst["Name"]);
             Assert.AreEqual(src.Number, dst["Number"]);
-            Assert.AreEqual(src.Nest.Name, Encoding.UTF8.GetString((dst["Nest"] as Dictionary<String, Object>)["Name"] as Byte[]));
+            Assert.AreEqual(src.Nest.Name, (dst["Nest"] as Dictionary<String, Object>)["Name"]);
         }
     }
 }

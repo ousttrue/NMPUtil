@@ -87,7 +87,7 @@ namespace UnitTest
                 p.Pack(color.B);
             });
             MsgPackUnpacker.UnpackArrayMap.Add(typeof(System.Drawing.Color)
-                , (ref Object o, MsgPackUnpacker u, Int32 size) =>
+                , (ref Object o, MsgPackUnpacker u, UInt32 size) =>
                 {
                     // check map size
                     if (size != 4)

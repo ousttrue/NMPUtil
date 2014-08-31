@@ -21,9 +21,9 @@ namespace UnitTest
                     MsgPackFormat.NEGATIVE_FIXNUM.InvMask());
 
             Assert.AreEqual(Convert.ToByte("10100000", 2), 
-                    MsgPackFormat.FIX_RAW.Mask());
+                    MsgPackFormat.FIX_STR.Mask());
             Assert.AreEqual(Convert.ToByte("01011111", 2), 
-                    MsgPackFormat.FIX_RAW.InvMask());
+                    MsgPackFormat.FIX_STR.InvMask());
         }
 
         //[Test]

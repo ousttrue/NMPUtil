@@ -21,10 +21,10 @@ namespace UnitTest
             var bytes = ms.ToArray();
 
             var unpacker = new MsgPackUnpacker(bytes);
-            var v=new Byte[unpacker.MemberCount];
+            var v="";
             unpacker.Unpack(ref v);
 
-            Assert.AreEqual("文字列", Encoding.UTF8.GetString(v));
+            Assert.AreEqual("文字列", v);
         }
     }
 }
