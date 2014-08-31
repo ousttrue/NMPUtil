@@ -12,9 +12,12 @@ namespace NUtil.MsgPack
         FIX_MAP = 0x80,
         FIX_ARRAY = 0x90,
         FIX_RAW = 0xA0,
+
         NIL = 0xC0,
+
         FALSE = 0xC2,
         TRUE = 0xC3,
+
         FLOAT = 0xCA,
         DOUBLE = 0xCB,
         UINT8 = 0xCC,
@@ -25,6 +28,7 @@ namespace NUtil.MsgPack
         INT16 = 0xD1,
         INT32 = 0xD2,
         INT64 = 0xD3,
+
         RAW16 = 0xDA,
         RAW32 = 0xDB,
         ARRAY16 = 0xDC,

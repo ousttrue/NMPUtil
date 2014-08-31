@@ -121,16 +121,22 @@ namespace NUtil.MsgPack
 
         Single ReadSingle()
         {
-            // endian ?
             var b = _view.Skip(Pos).Take(4);
+            if (BitConverter.IsLittleEndian)
+            {
+                b = b.Reverse();
+            }
             Advance(4);
             return BitConverter.ToSingle(b.ToArray(), 0);
         }
 
         Double ReadDouble()
         {
-            // endian ?
             var b = _view.Skip(Pos).Take(8);
+            if (BitConverter.IsLittleEndian)
+            {
+                b = b.Reverse();
+            }
             Advance(8);
             return BitConverter.ToDouble(b.ToArray(), 0);
         }

@@ -156,15 +156,27 @@ namespace NUtil.MsgPack
         public void Pack(Single n)
         {
             Writer.Write(MsgPackFormat.FLOAT.Mask());
-            // endian ?
-            Writer.Write(n);
+            if (BitConverter.IsLittleEndian)
+            {
+                Writer.Write(BitConverter.GetBytes(n).Reverse().ToArray());
+            }
+            else
+            {
+                Writer.Write(n);
+            }
         }
 
         public void Pack(Double n)
         {
             Writer.Write(MsgPackFormat.DOUBLE.Mask());
-            // endian ?
-            Writer.Write(n);
+            if (BitConverter.IsLittleEndian)
+            {
+                Writer.Write(BitConverter.GetBytes(n).Reverse().ToArray());
+            }
+            else
+            {
+                Writer.Write(n);
+            }
         }
 
         public void Pack(String s)

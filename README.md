@@ -1,4 +1,6 @@
 # MsgPack.Net
+- https://github.com/msgpack/msgpack/blob/master/spec.md
+
 MsgPackのC#実装。
 
 # ToDo
