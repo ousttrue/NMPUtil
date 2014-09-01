@@ -341,7 +341,8 @@ namespace NMPUtil.MsgPack
 
         public ArraySegment<Byte> Unpack<T>(ref T v)
         {
-            var t = v.GetType();
+            //var t = v.GetType();
+            var t = typeof(T);
             switch (Format)
             {
                 case MsgPackFormat.UINT8:
@@ -573,7 +574,8 @@ namespace NMPUtil.MsgPack
 
         ArraySegment<Byte> UnpackArray<T>(ref T t)
         {
-            var type = t.GetType();
+            //var type = t.GetType();
+            var type = typeof(T);
             if (type.IsValueType)
             {
                 foreach (var kv in _unpackArrayMapVal)
@@ -755,7 +757,8 @@ namespace NMPUtil.MsgPack
 
         ArraySegment<Byte> UnpackMap<T>(ref T t)
         {
-            var type = t.GetType();
+            //var type = t.GetType();
+            var type = typeof(T);
             if (type.IsValueType)
             {
                 foreach (var kv in _unpackMapMapVal)
