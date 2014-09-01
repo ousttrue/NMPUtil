@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 using NUnit.Framework;
-using NUtil.MsgPack;
+using NMPUtil.MsgPack;
 using System.IO;
 
 namespace UnitTest

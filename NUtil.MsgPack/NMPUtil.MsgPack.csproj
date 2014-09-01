@@ -7,7 +7,7 @@
     <ProjectGuid>{841BB23D-118C-437D-A846-B3E4B0630209}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NUtil</RootNamespace>
+    <RootNamespace>NMPUtil</RootNamespace>
     <AssemblyName>NUtil.MsgPack</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

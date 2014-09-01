@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NUtil.MsgPack
+namespace NMPUtil.MsgPack
 {
     public partial class MsgPackUnpacker
     {

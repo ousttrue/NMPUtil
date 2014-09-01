@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NUtil.MsgPack
+namespace NMPUtil.MsgPack
 {
     public class MsgPackPacker
     {

@@ -48,9 +48,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NUtil.MsgPack\NUtil.MsgPack.csproj">
+    <ProjectReference Include="..\NUtil.MsgPack\NMPUtil.MsgPack.csproj">
       <Project>{841bb23d-118c-437d-a846-b3e4b0630209}</Project>
-      <Name>NUtil.MsgPack</Name>
+      <Name>NMPUtil.MsgPack</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
