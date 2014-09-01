@@ -14,8 +14,7 @@ namespace Simple
         static void Main(string[] args)
         {
             var ms=new MemoryStream();
-            var w = new BinaryWriter(ms);
-            var packer=new MsgPackPacker(w);
+            var packer = new MsgPackPacker(ms); ;
             packer.Pack(1);
 
             var bytes=ms.ToArray();
