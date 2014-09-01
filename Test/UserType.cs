@@ -86,8 +86,8 @@ namespace UnitTest
                 p.Pack(color.G);
                 p.Pack(color.B);
             });
-            MsgPackUnpacker.UnpackArrayMap.Add(typeof(System.Drawing.Color)
-                , (ref Object o, MsgPackUnpacker u, UInt32 size) =>
+            MsgPackUnpacker.AddUnpackArray<System.Drawing.Color>(
+                (ref System.Drawing.Color o, MsgPackUnpacker u, UInt32 size) =>
                 {
                     // check map size
                     if (size != 4)
@@ -103,7 +103,6 @@ namespace UnitTest
                     Byte b = 0;
                     u.UnpackSub(ref b);
                     o = System.Drawing.Color.FromArgb(a, r, g, b);
-                    int x = 0;
                 });
       
             // pack
