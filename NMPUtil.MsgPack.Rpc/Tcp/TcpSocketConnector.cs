@@ -6,18 +6,24 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NMPUtil.Streams
+namespace NMPUtil.Tcp
 {
-    public class TcpConnector
+    public class TcpSocketConnector
     {
-        public event EventHandler<SocketEventArgs> ConnectedEvent;
+        public event EventHandler<TcpSocketEventArgs> ConnectedEvent;
         void EmitConnectedEvent(Socket socket)
         {
             var temp = ConnectedEvent;
             if (temp != null)
             {
-                temp(this, new SocketEventArgs { Socket = socket });
+                temp(this, new TcpSocketEventArgs { Socket = socket });
             }
+        }
+
+        public Socket Socket
+        {
+            get;
+            private set;
         }
 
         public void Connect(IPEndPoint endpoint)
@@ -25,6 +31,7 @@ namespace NMPUtil.Streams
             Action<IAsyncResult> callback = (IAsyncResult ar) =>
             {
                 var socket = ar.AsyncState as Socket;
+                this.Socket = socket;
                 socket.EndConnect(ar);
 
                 EmitConnectedEvent(socket);

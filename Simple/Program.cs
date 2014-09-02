@@ -7,6 +7,7 @@ using System.IO;
 using NMPUtil.MsgPack;
 using NMPUtil.MsgPack.Rpc;
 using System.Diagnostics;
+using System.Net.Sockets;
 
 
 namespace Simple
@@ -40,57 +41,38 @@ namespace Simple
             }
 
             {
-                var server = new NMPUtil.Streams.TcpListener();
-                var dispatcher = new NMPUtil.MsgPack.Rpc.MsgPackRpcDispatcher();
                 var streamManager = new NMPUtil.Streams.StreamManager();
 
-                server.AcceptedEvent += streamManager.OnConnected;
+                var server = new NMPUtil.Tcp.TcpSocketListener();
+                server.AcceptedEvent += streamManager.OnTcpSocketConnected;
+                server.AcceptedEvent += (Object o, NMPUtil.Tcp.TcpSocketEventArgs e) =>
+                {
+                    Console.WriteLine("accepted");
+                };
 
                 streamManager.StreamReadEvent += (Object o, NMPUtil.Streams.StreamReadEventArgs e) =>
                 {
-
-                    var s = o as Stream;
-                    if (s == null)
-                    {
-                        return;
-                    }
-                    dispatcher.Process(s, e.Bytes);
-
+                    Console.WriteLine(String.Format("read {0} bytes", e.Bytes.Count));
                 };
 
-                Func<int, int, int> add = (int a, int b) =>
+                server.Listen(NMPUtil.Tcp.TcpUtil.EndPoint("", 8080));
+
+                var client = new NMPUtil.Tcp.TcpSocketConnector();
+                client.ConnectedEvent += streamManager.OnTcpSocketConnected;
+                client.ConnectedEvent += (Object o, NMPUtil.Tcp.TcpSocketEventArgs e) =>
                 {
-                    return a + b;
+                    Console.WriteLine("connected");
                 };
 
-                MsgPackRpcDispatcher.RpcFunc func = (MsgPackPacker packer, SubMsgPackUnpacker unpacker, UInt32 count) =>
-                {
-                    if (count != 2)
-                    {
-                        throw new ArgumentException("count");
-                    }
-                    var lhs = unpacker.Unpack<int>();
-                    var rhs = unpacker.Unpack<int>();
-
-                    var result = add(lhs, rhs);
-                    packer.Pack(result);
-                };
-
-                dispatcher.RegisterFunc("Add", func);
-
-                // thread
-                server.Listen(NMPUtil.Streams.TcpUtil.EndPoint("", 8080));
-
-                var client = new NMPUtil.Streams.TcpConnector();
-                client.ConnectedEvent += streamManager.OnConnected;
-
-                client.Connect(NMPUtil.Streams.TcpUtil.EndPoint("127.0.0.1", 8080));
-
+                client.Connect(NMPUtil.Tcp.TcpUtil.EndPoint("127.0.0.1", 8080));
 
                 for (int i = 0; i < 10; ++i)
                 {
                     Console.WriteLine(i);
                     System.Threading.Thread.Sleep(1000);
+
+                    var msg = new Byte[] { (Byte)i };
+                    var sendbytes=client.Socket.Send(msg, 0, msg.Length, SocketFlags.None);
                 }
             }
         }

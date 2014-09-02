@@ -7,9 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace NMPUtil.Streams
+namespace NMPUtil.Tcp
 {
-    public class SocketEventArgs : EventArgs
+    public class TcpSocketEventArgs : EventArgs
     {
         public Socket Socket;
     }

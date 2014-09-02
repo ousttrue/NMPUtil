@@ -33,7 +33,7 @@ namespace NMPUtil
         {
             base.Write(IPAddress.HostToNetworkOrder((Int16)value));
         }
-
+    
         public override void Write(UInt32 value)
         {
             base.Write(IPAddress.HostToNetworkOrder((Int32)value));

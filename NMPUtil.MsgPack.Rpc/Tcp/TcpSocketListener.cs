@@ -6,17 +6,17 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NMPUtil.Streams
+namespace NMPUtil.Tcp
 {
-    public class TcpListener
+    public class TcpSocketListener
     {
-        public event EventHandler<SocketEventArgs> AcceptedEvent;
+        public event EventHandler<TcpSocketEventArgs> AcceptedEvent;
         void EmitAcceptedEvent(Socket socket)
         {
             var temp = AcceptedEvent;
             if (temp != null)
             {
-                temp(this, new SocketEventArgs { Socket = socket });
+                temp(this, new TcpSocketEventArgs { Socket = socket });
             }
         }
 
@@ -42,7 +42,7 @@ namespace NMPUtil.Streams
                 var socket = ar.AsyncState as Socket;
                 Socket newSocket = socket.EndAccept(ar);
 
-                EmitAcceptedEvent(newSocket);        
+                EmitAcceptedEvent(newSocket);   
 
                 // next...
                 BeginAccept();
