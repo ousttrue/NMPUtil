@@ -8,12 +8,6 @@ using System.Threading.Tasks;
 
 namespace NMPUtil.Streams
 {
-    public class SocketEventArgs : EventArgs
-    {
-        public Socket Socket;
-    }
-
-
     public class TcpListener
     {
         public event EventHandler<SocketEventArgs> AcceptedEvent;
@@ -30,23 +24,6 @@ namespace NMPUtil.Streams
         Socket _listener;
 
 
-        public void Listen(String host, Int32 port)
-        {
-            if (String.IsNullOrEmpty(host))
-            {
-                Listen(new IPAddress(0), port);
-            }
-            else
-            {
-                Listen(IPAddress.Parse(host), port);
-            }
-        }
-
-        public void Listen(IPAddress address, Int32 port)
-        {
-            Listen(new IPEndPoint(address, port));
-        }
-
         public void Listen(IPEndPoint endpoint)
         {
             this._endpoint=endpoint;
@@ -55,7 +32,7 @@ namespace NMPUtil.Streams
             _listener.Listen(10);
 
             BeginAccept();
-            Console.WriteLine(String.Format("Begin Listen {0} ...", endpoint));
+            Console.WriteLine(String.Format("begin Listen {0} ...", endpoint));
         }
 
         void BeginAccept()
@@ -72,6 +49,7 @@ namespace NMPUtil.Streams
             };
 
             _listener.BeginAccept(callback, _listener);
+            Console.WriteLine("accepting...");
         }
 
         public void ShutDown()

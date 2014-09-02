@@ -4,8 +4,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simple", "Simple\Simple.csproj", "{DE8E0EA5-73E5-4D72-B4BC-700DB6CDF807}"
+	ProjectSection(ProjectDependencies) = postProject
+		{841BB23D-118C-437D-A846-B3E4B0630209} = {841BB23D-118C-437D-A846-B3E4B0630209}
+		{3200E456-E4C2-4A2F-913B-D2134965C62D} = {3200E456-E4C2-4A2F-913B-D2134965C62D}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{FB9264FF-AB50-4F9B-B009-9DD0F3134F29}"
+	ProjectSection(ProjectDependencies) = postProject
+		{841BB23D-118C-437D-A846-B3E4B0630209} = {841BB23D-118C-437D-A846-B3E4B0630209}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRunner", "TestRunner\TestRunner.csproj", "{33884D67-B0B1-4793-B9E6-1A47B5E2CE63}"
 EndProject

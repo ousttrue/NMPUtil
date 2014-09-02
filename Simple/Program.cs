@@ -79,20 +79,19 @@ namespace Simple
                 dispatcher.RegisterFunc("Add", func);
 
                 // thread
-                server.Listen("", 8080);
+                server.Listen(NMPUtil.Streams.TcpUtil.EndPoint("", 8080));
 
-                var client = new NMPUtil.Streams.TcpClient();
+                var client = new NMPUtil.Streams.TcpConnector();
                 client.ConnectedEvent += streamManager.OnConnected;
-                client.ConnectedEvent += (Object o, EventArgs e) =>
+
+                client.Connect(NMPUtil.Streams.TcpUtil.EndPoint("127.0.0.1", 8080));
+
+
+                for (int i = 0; i < 10; ++i)
                 {
-
-                };
-
-                client.Connect("127.0.0.1", 8080);
-
-
-
-                System.Threading.Thread.Sleep(1000);
+                    Console.WriteLine(i);
+                    System.Threading.Thread.Sleep(1000);
+                }
             }
         }
     }

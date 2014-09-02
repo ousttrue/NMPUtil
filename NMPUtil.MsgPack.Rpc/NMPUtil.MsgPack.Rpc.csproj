@@ -44,8 +44,9 @@
     <Compile Include="MsgPack\Rpc\Response.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Streams\StreamManager.cs" />
-    <Compile Include="Streams\TcpClient.cs" />
+    <Compile Include="Streams\TcpConnector.cs" />
     <Compile Include="Streams\TcpListener.cs" />
+    <Compile Include="Streams\TcpUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NMPUtil.MsgPack\NMPUtil.MsgPack.csproj">
