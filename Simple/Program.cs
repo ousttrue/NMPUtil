@@ -40,46 +40,6 @@ namespace Simple
             }
 
             {
-                // シンプルなPOCOとしての対象
-                var obj = new TestClass
-                {
-                    MyProperty1 = "hoge",
-                    MyProperty2 = 1,
-                    //MyProperty3 = new DateTime(1999, 12, 11),
-                    MyProperty4 = true
-                };
-
-                // オブジェクト配列としての対象
-                var array = Enumerable.Range(1, 10)
-                    .Select(i => new TestClass
-                    {
-                        MyProperty1 = "hoge" + i,
-                        MyProperty2 = i,
-                        //MyProperty3 = new DateTime(1999, 12, 11).AddDays(i),
-                        MyProperty4 = i % 2 == 0
-                    })
-                    .ToArray();
-
-                var sw = new Stopwatch();
-
-                var ms = new MemoryStream();
-                var tc=new TestClass();
-                sw.Start();
-                for (int i = 0; i < 10000; ++i)
-                {
-                    var packer = new MsgPackPacker(ms); ;
-                    packer.Pack(array);
-
-                    var unpacker = new MsgPackUnpacker(ms.ToArray());
-                    var tca = new TestClass[unpacker.MemberCount];
-                    unpacker.Unpack(ref tca);
-                }
-                sw.Stop();
-                Console.WriteLine("{0} msec", sw.ElapsedMilliseconds);
-                System.Threading.Thread.Sleep(3000);
-            }
-
-            {
                 var server = new NMPUtil.Streams.TcpListener();
                 var dispatcher = new NMPUtil.MsgPack.Rpc.MsgPackRpcDispatcher();
                 var streamManager = new NMPUtil.Streams.StreamManager();
@@ -119,7 +79,7 @@ namespace Simple
                 dispatcher.RegisterFunc("Add", func);
 
                 // thread
-                server.Listen(8080);
+                server.Listen("", 8080);
 
                 var client = new NMPUtil.Streams.TcpClient();
                 client.ConnectedEvent += streamManager.OnConnected;
@@ -129,6 +89,10 @@ namespace Simple
                 };
 
                 client.Connect("127.0.0.1", 8080);
+
+
+
+                System.Threading.Thread.Sleep(1000);
             }
         }
     }

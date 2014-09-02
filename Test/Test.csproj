@@ -61,10 +61,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NMPUtil.MsgPack.Rpc\NMPUtil.MsgPack.Rpc.csproj">
-      <Project>{3200e456-e4c2-4a2f-913b-d2134965c62d}</Project>
-      <Name>NMPUtil.MsgPack.Rpc</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NMPUtil.MsgPack\NMPUtil.MsgPack.csproj">
       <Project>{841bb23d-118c-437d-a846-b3e4b0630209}</Project>
       <Name>NMPUtil.MsgPack</Name>

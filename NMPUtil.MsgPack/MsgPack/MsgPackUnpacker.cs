@@ -629,7 +629,7 @@ namespace NMPUtil.MsgPack
 
         static public void AddUnpackArray<T>(UnpackerForReferenceTypeDelegate<T> unpacker) where T : class
         {
-            _unpackArrayMapRef.Add(typeof(T), unpacker);
+            _unpackArrayMapRef[typeof(T)]=unpacker;
         }
         static public void AddUnpackArray<T>(UnpackerForValueTypeDelegate<T> unpacker) where T : struct
         {
