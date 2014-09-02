@@ -24,8 +24,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var j=default(Single);
-            unpacker.Unpack(ref j);
+            var j=unpacker.Unpack<Single>();
             Assert.AreEqual(i, j);
         }
 
@@ -46,8 +45,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var j=default(Double);
-            unpacker.Unpack(ref j);
+            var j=unpacker.Unpack<Double>();
             Assert.AreEqual(i, j);
         }
     }

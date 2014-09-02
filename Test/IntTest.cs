@@ -38,8 +38,7 @@ namespace UnitTest
 
                 var unpacker=new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(Byte);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<Byte>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -57,8 +56,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j=default(SByte);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<sbyte>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -79,8 +77,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(Byte);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<Byte>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -101,8 +98,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(UInt16);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<UInt16>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -123,8 +119,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(UInt16);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<UInt16>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -145,8 +140,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(UInt32);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<UInt32>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -168,8 +162,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(UInt64);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<UInt64>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -191,8 +184,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(SByte);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<sbyte>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -214,8 +206,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(Int16);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<Int16>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -237,8 +228,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(Int32);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<Int32>();
                 Assert.AreEqual(i, j);
             }
         }
@@ -260,8 +250,7 @@ namespace UnitTest
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
 
-                var j = default(Int64);
-                unpacker.Unpack(ref j);
+                var j=unpacker.Unpack<Int64>();
                 Assert.AreEqual(i, j);
             }
         }

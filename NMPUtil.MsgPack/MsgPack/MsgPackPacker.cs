@@ -26,7 +26,8 @@ namespace NMPUtil.MsgPack
         {
         }
 
-        public static Dictionary<Type, Action<MsgPackPacker, Object>> TypeMap = new Dictionary<Type, Action<MsgPackPacker, Object>>()
+        public delegate void PackerDelegate(MsgPackPacker packer, Object o);
+        public static Dictionary<Type, PackerDelegate> TypeMap = new Dictionary<Type, PackerDelegate>()
                 {
                     // float
                     {typeof(Double), (MsgPackPacker packer, Object o) =>{
@@ -282,7 +283,18 @@ namespace NMPUtil.MsgPack
                 return;
             }
 
-            // 汎用
+            foreach(var m in type.GetMethods())
+            {
+                var a=m.GetCustomAttribute<MsgPackPackerAttribute>();
+                if (a != null)
+                {
+                    var callback = (PackerDelegate)m.CreateDelegate(typeof(PackerDelegate));
+                    callback(this, o);
+                    TypeMap.Add(type, callback);
+                    return;
+                }
+            }
+
             {
                 var pilist = type.GetProperties(
                     BindingFlags.Public | BindingFlags.Instance).Where(pi =>

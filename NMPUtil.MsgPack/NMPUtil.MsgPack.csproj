@@ -41,7 +41,9 @@
   <ItemGroup>
     <Compile Include="MsgPack\MsgPackFormat.cs" />
     <Compile Include="MsgPack\MsgPackPacker.cs" />
+    <Compile Include="MsgPack\MsgPackPackerAttribute.cs" />
     <Compile Include="MsgPack\MsgPackUnpacker.cs" />
+    <Compile Include="MsgPack\MsgPackArrayUnpackerAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

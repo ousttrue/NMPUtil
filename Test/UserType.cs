@@ -12,20 +12,23 @@ namespace UnitTest
     [Serializable]
     struct Vector3
     {
+        Single _x;
         public Single X
         {
-            get;
-            set;
+            get { return _x;  }
+            set { _x = value; }
         }
+        Single _y;
         public Single Y
         {
-            get;
-            set;
+            get { return _y; }
+            set { _y = value; }
         }
+        Single _z;
         public Single Z
         {
-            get;
-            set;
+            get { return _z; }
+            set { _z = value; }
         }
 
         public override bool Equals(object obj)
@@ -36,6 +39,33 @@ namespace UnitTest
                 return s.X == X && s.Y == Y && s.Z == Z;
             }
             return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        [MsgPackPacker]
+        static public void Packer(MsgPackPacker p, Object o)
+        {
+            var v = (Vector3)o;
+            p.Pack_Array(3);
+            p.Pack(v._x);
+            p.Pack(v._y);
+            p.Pack(v._z);
+        }
+
+        [MsgPackArrayUnpacker]
+        static public void Unpack(ref Vector3 v, MsgPackUnpacker u, UInt32 count)
+        {
+            if (count != 3)
+            {
+                throw new ArgumentException("count");
+            }
+            v._x = u.UnpackSub<Single>();
+            v._y = u.UnpackSub<Single>();
+            v._z = u.UnpackSub<Single>();
         }
     }
 
@@ -94,14 +124,10 @@ namespace UnitTest
                     {
                         throw new ArgumentException("invalid map size");
                     }
-                    Byte a = 0;
-                    u.UnpackSub(ref a);
-                    Byte r = 0;
-                    u.UnpackSub(ref r);
-                    Byte g = 0;
-                    u.UnpackSub(ref g);
-                    Byte b = 0;
-                    u.UnpackSub(ref b);
+                    Byte a = u.UnpackSub<Byte>();
+                    Byte r = u.UnpackSub<Byte>();
+                    Byte g = u.UnpackSub<Byte>();
+                    Byte b = u.UnpackSub<Byte>();
                     o = System.Drawing.Color.FromArgb(a, r, g, b);
                 });
       

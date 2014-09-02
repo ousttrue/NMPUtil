@@ -37,8 +37,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var j=default(Boolean);
-            unpacker.Unpack(ref j);
+            var j=unpacker.Unpack<Boolean>();
             Assert.AreEqual(true, j);
         }
 
@@ -53,8 +52,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var j = default(Boolean);
-            unpacker.Unpack(ref j);
+            var j=unpacker.Unpack<Boolean>();
             Assert.AreEqual(false, j);
         }
     }

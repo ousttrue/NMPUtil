@@ -20,10 +20,9 @@ namespace Simple
             var bytes=ms.ToArray();
             Console.WriteLine(String.Join(",", bytes));
 
-            int result=0;
             var unpacker=new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
-            var view=unpacker.Unpack(ref result);
-            Console.WriteLine(view.Count);
+            var result=unpacker.Unpack<int>();
+          
             Console.WriteLine(result);
         }
     }
