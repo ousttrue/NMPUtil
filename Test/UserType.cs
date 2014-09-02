@@ -57,16 +57,21 @@ namespace UnitTest
         }
 
         [MsgPackArrayUnpacker]
-        static public Vector3 Unpack(MsgPackUnpacker u, UInt32 count)
+        static public Vector3 Unpack(SubMsgPackUnpacker u, UInt32 count)
         {
             if (count != 3)
             {
                 throw new ArgumentException("count");
             }
+
             var v = new Vector3();
-            v._x = u.UnpackSub<Single>();
-            v._y = u.UnpackSub<Single>();
-            v._z = u.UnpackSub<Single>();
+            u.ParseHeadByte();
+            v._x = u.Unpack<Single>();
+            u.ParseHeadByte();
+            v._y = u.Unpack<Single>();
+            u.ParseHeadByte();
+            v._z = u.Unpack<Single>();
+
             return v;
         }
     }
@@ -119,16 +124,20 @@ namespace UnitTest
                 p.Pack(color.B);
             });
             MsgPackUnpacker.AddUnpackArray<System.Drawing.Color>(
-                (MsgPackUnpacker u, UInt32 size) =>
+                (SubMsgPackUnpacker u, UInt32 size) =>
                 {
                     if (size != 4)
                     {
                         throw new ArgumentException("size");
                     }
-                    var a = u.UnpackSub<Byte>();
-                    var r = u.UnpackSub<Byte>();
-                    var g = u.UnpackSub<Byte>();
-                    var b = u.UnpackSub<Byte>();
+                    u.ParseHeadByte();
+                    var a = u.Unpack<Byte>();
+                    u.ParseHeadByte();
+                    var r = u.Unpack<Byte>();
+                    u.ParseHeadByte();
+                    var g = u.Unpack<Byte>();
+                    u.ParseHeadByte();
+                    var b = u.Unpack<Byte>();
                     return System.Drawing.Color.FromArgb(a, r, g, b);
                 });
       

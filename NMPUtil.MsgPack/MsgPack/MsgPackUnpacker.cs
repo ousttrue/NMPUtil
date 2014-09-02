@@ -28,14 +28,15 @@ namespace NMPUtil.MsgPack
             return new ArraySegment<byte>(_view.Array, _view.Offset + Pos, _view.Count - Pos);
         }
 
-        MsgPackUnpacker GetSubUnpacker()
+        public SubMsgPackUnpacker GetSubUnpacker()
         {
-            return new MsgPackUnpacker(GetRemain());
+            return new SubMsgPackUnpacker(GetRemain(), this);
         }
 
         public Byte HeadByte
         {
-            get { return _view.First(); }
+            get;
+            private set;
         }
 
         SByte ReadSByte()
@@ -168,10 +169,17 @@ namespace NMPUtil.MsgPack
         }
 
         // for array / map / str / bin
+        UInt32 _memberCount;
         public UInt32 MemberCount
         {
-            get;
-            private set;
+            get
+            {
+                return _memberCount;
+            }
+            private set
+            {
+                _memberCount = value;
+            }
         }
         #endregion
 
@@ -181,19 +189,28 @@ namespace NMPUtil.MsgPack
             set;
         }
 
-        public MsgPackUnpacker(IEnumerable<Byte> bytes)
-            : this(new ArraySegment<Byte>(bytes.ToArray()))
+        public MsgPackUnpacker(IEnumerable<Byte> bytes, bool doParseHeadByte=true)
+            : this(new ArraySegment<Byte>(bytes.ToArray()), doParseHeadByte)
         {}
 
-        public MsgPackUnpacker(Byte[] bytes)
-            : this(new ArraySegment<Byte>(bytes))
+        public MsgPackUnpacker(Byte[] bytes, bool doParseHeadByte = true)
+            : this(new ArraySegment<Byte>(bytes), doParseHeadByte)
         {}
 
-        public MsgPackUnpacker(ArraySegment<Byte> view)
+        public MsgPackUnpacker(ArraySegment<Byte> view, bool doParseHeadByte = true)
         {
             this.StrEncoding = Encoding.UTF8;
             this._view = view;
-            ReadByte();
+
+            if (doParseHeadByte)
+            {
+                ParseHeadByte();
+            }
+        }
+
+        public MsgPackFormat ParseHeadByte()
+        {
+            HeadByte = ReadByte();
 
             var t = (MsgPackFormat)HeadByte;
             switch (t)
@@ -212,89 +229,93 @@ namespace NMPUtil.MsgPack
                 case MsgPackFormat.FLOAT:
                 case MsgPackFormat.DOUBLE:
                     Format = t;
-                    return;
+                    break;
 
                 case MsgPackFormat.BIN8:
                     Format = t;
                     MemberCount = ReadByte();
-                    return;
+                    break;
 
                 case MsgPackFormat.BIN16:
                     Format = t;
                     MemberCount = ReadUInt16();
-                    return;
+                    break;
 
                 case MsgPackFormat.BIN32:
                     Format = t;
                     MemberCount = ReadUInt32();
-                    return;
+                    break;
 
                 case MsgPackFormat.STR8:
                     Format = t;
                     MemberCount = ReadByte();
-                    return;
+                    break;
 
                 case MsgPackFormat.STR16:
                     Format = t;
                     MemberCount = ReadUInt16();
-                    return;
+                    break;
 
                 case MsgPackFormat.STR32:
                     Format = t;
                     MemberCount = ReadUInt32();
-                    return;
+                    break;
 
                 case MsgPackFormat.ARRAY16:
                     Format = t;
                     MemberCount = ReadUInt16();
-                    return;
+                    break;
 
                 case MsgPackFormat.ARRAY32:
                     Format = t;
                     MemberCount = ReadUInt32();
-                    return;
+                    break;
 
                 case MsgPackFormat.MAP16:
                     Format = t;
                     MemberCount = ReadUInt16();
-                    return;
+                    break;
 
                 case MsgPackFormat.MAP32:
                     Format = t;
                     MemberCount = ReadUInt32();
-                    return;
+                    break;
+
+                default:
+                    {
+
+                        if (HeadByte < MsgPackFormat.FIX_MAP.Mask())
+                        {
+                            Format = MsgPackFormat.POSITIVE_FIXNUM;
+                        }
+                        else if (HeadByte < MsgPackFormat.FIX_ARRAY.Mask())
+                        {
+                            Format = MsgPackFormat.FIX_MAP;
+                            MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
+                        }
+                        else if (HeadByte < MsgPackFormat.FIX_STR.Mask())
+                        {
+                            Format = MsgPackFormat.FIX_ARRAY;
+                            MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
+                        }
+                        else if (HeadByte < MsgPackFormat.NIL.Mask())
+                        {
+                            Format = MsgPackFormat.FIX_STR;
+                            MemberCount = (UInt32)(HeadByte & Convert.ToByte("00011111", 2));
+                        }
+                        else if (HeadByte >= MsgPackFormat.NEGATIVE_FIXNUM.Mask())
+                        {
+                            Format = MsgPackFormat.NEGATIVE_FIXNUM;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("unknown HeadByte " + HeadByte);
+                        }
+                        break;
+                    }
             }
 
-            if (HeadByte < MsgPackFormat.FIX_MAP.Mask())
-            {
-                Format = MsgPackFormat.POSITIVE_FIXNUM;
-                return;
-            }
-            else if (HeadByte < MsgPackFormat.FIX_ARRAY.Mask())
-            {
-                Format = MsgPackFormat.FIX_MAP;
-                MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
-                return;
-            }
-            else if (HeadByte < MsgPackFormat.FIX_STR.Mask())
-            {
-                Format = MsgPackFormat.FIX_ARRAY;
-                MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
-                return;
-            }
-            else if (HeadByte < MsgPackFormat.NIL.Mask())
-            {
-                Format = MsgPackFormat.FIX_STR;
-                MemberCount = (UInt32)(HeadByte & Convert.ToByte("00011111", 2));
-                return;
-            }
-            else if (HeadByte >= MsgPackFormat.NEGATIVE_FIXNUM.Mask())
-            {
-                Format = MsgPackFormat.NEGATIVE_FIXNUM;
-                return;
-            }
-
-            throw new InvalidOperationException("unknown HeadByte "+HeadByte);
+            return Format;
         }
 
         public Object UnpackGeneric(Type type)
@@ -340,17 +361,8 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException();
         }
 
-        public T UnpackSub<T>()where T:struct
-        {
-            var sub = GetSubUnpacker();
-            var v=sub.Unpack<T>();
-            Advance(sub.Pos);
-            return v;
-        }
-
         public T Unpack<T>()where T:struct
         {
-            //var t = v.GetType();
             var t = typeof(T);
             switch (Format)
             {
@@ -593,8 +605,8 @@ namespace NMPUtil.MsgPack
         }
 
 
-        public delegate void UnpackerForReferenceTypeDelegate<in T>(T target, MsgPackUnpacker unpacker, UInt32 count);
-        public delegate T UnpackerForValueTypeDelegate<T>(MsgPackUnpacker unpacker, UInt32 count);
+        public delegate void UnpackerForReferenceTypeDelegate<in T>(T target, SubMsgPackUnpacker unpacker, UInt32 count);
+        public delegate T UnpackerForValueTypeDelegate<T>(SubMsgPackUnpacker unpacker, UInt32 count);
 
         #region UnpackArray
         static Dictionary<Type, Object> _unpackArrayMapVal =
@@ -605,35 +617,32 @@ namespace NMPUtil.MsgPack
             {
                   typeof(Object[])
                 , (Object)(UnpackerForReferenceTypeDelegate<Object[]>)( 
-                (Object[] target, MsgPackUnpacker unpacker, UInt32 count)=>
+                (Object[] target, SubMsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
-                    //var target = o as Object[];
                     if(target.Length<count){
                         throw new ArgumentException("count");
                     }
                     for (uint i = 0; i < count; ++i)
                     {
-                        var sub = unpacker.GetSubUnpacker();
-                        if (sub.IsArray)
+                        unpacker.ParseHeadByte();
+
+                        if (unpacker.IsArray)
                         {
                             var val=new List<Object>();
-                            sub.Unpack(ref val);
-                            unpacker.Advance(sub.Pos);
+                            unpacker.Unpack(ref val);
                             target[i] = val;
                         }
-                        else if (sub.IsMap)
+                        else if (unpacker.IsMap)
                         {
                             var val=new Dictionary<String, Object>();
-                            sub.Unpack(ref val);
-                            unpacker.Advance(sub.Pos);
+                            unpacker.Unpack(ref val);
                             target[i] = val;
                         }
                         else
                         {
                             var val = new Object();
-                            sub.Unpack(ref val);
-                            unpacker.Advance(sub.Pos);
+                            unpacker.Unpack(ref val);
                             target[i] = val;
                         }
                     }
@@ -644,40 +653,38 @@ namespace NMPUtil.MsgPack
             , {
                 typeof(IList<Object>)
                 , (Object)(UnpackerForReferenceTypeDelegate<IList<Object>>)(
-                (IList<Object> target, MsgPackUnpacker unpacker, UInt32 count)=>
+                (IList<Object> target, SubMsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     for (uint i = 0; i < count; ++i)
                     {
-                        {
+                        unpacker.ParseHeadByte();
+
                             var sub = unpacker.GetSubUnpacker();
                             if (sub.IsArray)
                             {
                                 var val = new List<Object>();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(val);
                             }
                             else if (sub.IsMap)
                             {
                                 var val = new Dictionary<String, Object>();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(val);
                             }
                             else
                             {
                                 var val = new Object();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(val);
                             }
-                        }
+
                     }
                     Console.WriteLine(target);
                 }
                 )
-            }
+                }
 
         };
         static public void AddUnpackArray<T>(UnpackerForReferenceTypeDelegate<T> unpacker) where T : class
@@ -695,8 +702,11 @@ namespace NMPUtil.MsgPack
             {
                 if (kv.Key.IsAssignableFrom(typeof(T)))
                 {
-                    var unpacker = (UnpackerForValueTypeDelegate<T>)kv.Value;
-                    return unpacker(this, MemberCount);
+                    var handler = (UnpackerForValueTypeDelegate<T>)kv.Value;
+                    using (var sub = GetSubUnpacker())
+                    {
+                        return handler(sub, MemberCount);
+                    }
                 }
             }
 
@@ -705,25 +715,31 @@ namespace NMPUtil.MsgPack
                 var a = m.GetCustomAttribute<MsgPackArrayUnpackerAttribute>();
                 if (a != null)
                 {
-                    var callback = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
-                    var t=callback(this, MemberCount);
-                    AddUnpackArray<T>(callback);
-                    return t; 
+                    var handler = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
+                    using (var sub = GetSubUnpacker())
+                    {
+                        var t = handler(sub, MemberCount);
+                        AddUnpackArray<T>(handler);
+                        return t;
+                    }
                 }
             }
 
-            throw new InvalidOperationException("no handle for "+typeof(T));
+            throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
-        ArraySegment<Byte> UnpackArray<T>(T t) where T : class
+        void UnpackArray<T>(T t) where T : class
         {
             foreach (var kv in _unpackArrayMapRef)
             {
                 if (kv.Key.IsAssignableFrom(typeof(T)))
                 {
-                    var unpackMap = (UnpackerForReferenceTypeDelegate<T>)kv.Value;
-                    unpackMap(t, this, MemberCount);
-                    return GetRemain();
+                    using (var sub = GetSubUnpacker())
+                    {
+                        var handler = (UnpackerForReferenceTypeDelegate<T>)kv.Value;
+                        handler(t, sub, MemberCount);
+                        return;
+                    }
                 }
             }
 
@@ -740,7 +756,7 @@ namespace NMPUtil.MsgPack
             {
                 typeof(IDictionary<String, Object>)
                 , (Object)(UnpackerForReferenceTypeDelegate<IDictionary<String, Object>>)(
-                (IDictionary<String, Object> o, MsgPackUnpacker unpacker, UInt32 count)=>
+                (IDictionary<String, Object> o, SubMsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var target = o as IDictionary<String, Object>;
@@ -748,31 +764,27 @@ namespace NMPUtil.MsgPack
                     {
                         var key=String.Empty;
                         {
-                            var sub = unpacker.GetSubUnpacker();
-                            sub.Unpack(ref key);
-                            unpacker.Advance(sub.Pos);
+                            unpacker.ParseHeadByte();
+                            unpacker.Unpack(ref key);
                         }
                         {
-                            var sub = unpacker.GetSubUnpacker();
-                            if (sub.IsArray)
+                            unpacker.ParseHeadByte();
+                            if (unpacker.IsArray)
                             {
                                 var val = new List<Object>();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
-                            else if (sub.IsMap)
+                            else if (unpacker.IsMap)
                             {
                                 var val = new Dictionary<String, Object>();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
                             else
                             {
                                 var val = new Object();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
                         }
@@ -784,38 +796,34 @@ namespace NMPUtil.MsgPack
             , {
                 typeof(IDictionary<Object, Object>)
                 , (Object)(UnpackerForReferenceTypeDelegate<IDictionary<Object, Object>>)(
-                (IDictionary<Object, Object> target, MsgPackUnpacker unpacker, UInt32 count)=>
+                (IDictionary<Object, Object> target, SubMsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     for (uint i = 0; i < count; ++i)
                     {
                         var key=String.Empty;
                         {
-                            var sub = unpacker.GetSubUnpacker();
-                            sub.Unpack(ref key);
-                            unpacker.Advance(sub.Pos);
+                            unpacker.ParseHeadByte();
+                            unpacker.Unpack(ref key);
                         }
                         {
-                            var sub = unpacker.GetSubUnpacker();
-                            if (sub.IsArray)
+                            unpacker.ParseHeadByte();
+                            if (unpacker.IsArray)
                             {
                                 var val = new List<Object>();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
-                            else if (sub.IsMap)
+                            else if (unpacker.IsMap)
                             {
                                 var val = new Dictionary<Object, Object>();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
                             else
                             {
                                 var val = new Object();
-                                sub.Unpack(ref val);
-                                unpacker.Advance(sub.Pos);
+                                unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
                         }
@@ -828,7 +836,7 @@ namespace NMPUtil.MsgPack
             , {
                   typeof(Object)
                 , (Object)(UnpackerForReferenceTypeDelegate<Object>)( 
-                (Object o, MsgPackUnpacker unpacker, UInt32 count)=>
+                (Object o, SubMsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var type = o.GetType();
@@ -836,18 +844,16 @@ namespace NMPUtil.MsgPack
                     {
                         String key = "";
                         {
-                            var sub = unpacker.GetSubUnpacker();
-                            sub.Unpack(ref key);
-                            unpacker.Advance(sub.Pos);
+                            unpacker.ParseHeadByte();
+                            unpacker.Unpack(ref key);
                         }
                         var pi = type.GetProperty(key);
                         {
-                            var sub = unpacker.GetSubUnpacker();
+                            unpacker.ParseHeadByte();
                             if (pi != null){
                                 if (pi.PropertyType.IsValueType)
                                 {
-                                    var v=sub.UnpackGeneric(pi.PropertyType);
-                                    unpacker.Advance(sub.Pos);
+                                    var v=unpacker.UnpackGeneric(pi.PropertyType);
                                     pi.SetValue(o, v, null);
                                 }
                                 else
@@ -864,16 +870,13 @@ namespace NMPUtil.MsgPack
                                             v = Activator.CreateInstance(pi.PropertyType);
                                         }
                                     }
-                                    sub.UnpackGeneric(ref v, pi.PropertyType);
-                                    unpacker.Advance(sub.Pos);
+                                    unpacker.UnpackGeneric(ref v, pi.PropertyType);
                                     pi.SetValue(o, v, null);
                                 }
                             }
                             else{
                                 var v=new Object();
-                                sub.Unpack(ref v);
-                                unpacker.Advance(sub.Pos);
-                                //pi.SetValue(o, v, null);
+                                unpacker.Unpack(ref v);
                             }
                         }
                     }
@@ -896,13 +899,16 @@ namespace NMPUtil.MsgPack
             {
                 if (kv.Key.IsAssignableFrom(typeof(T)))
                 {
-                    var unpacker= (UnpackerForValueTypeDelegate<T>)kv.Value;
-                    return unpacker(this, MemberCount);
+                    var handler= (UnpackerForValueTypeDelegate<T>)kv.Value;
+                    using (var sub = GetSubUnpacker())
+                    {
+                        return handler(sub, MemberCount);
+                    }
                 }
             }
 
             // add generics
-            throw new InvalidOperationException("no handle for "+typeof(T));
+            throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
         ArraySegment<Byte> UnpackMap<T>(T t) where T : class
@@ -912,13 +918,53 @@ namespace NMPUtil.MsgPack
                 if (kv.Key.IsAssignableFrom(typeof(T)))
                 {
                     var unpackMap = (UnpackerForReferenceTypeDelegate<T>)kv.Value;
-                    unpackMap(t, this, MemberCount);
+                    using (var sub = GetSubUnpacker())
+                    {
+                        unpackMap(t, sub, MemberCount);
+                    }
                     return GetRemain();
                 }
             }
 
-            throw new InvalidOperationException("no handle for "+typeof(T));
+            throw new InvalidOperationException("no handler for "+typeof(T));
         }
         #endregion
+    }
+
+
+    public class SubMsgPackUnpacker : MsgPackUnpacker, IDisposable
+    {
+        MsgPackUnpacker _parent;
+
+        public SubMsgPackUnpacker(ArraySegment<Byte> view, MsgPackUnpacker parent):base(view, false)
+        {
+            this._parent = parent;
+        }
+
+        // Flag: Has Dispose already been called?
+        bool disposed = false;
+
+        // Public implementation of Dispose pattern callable by consumers.
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        // Protected implementation of Dispose pattern.
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            if (disposing)
+            {
+                this._parent.Advance(Pos);
+            }
+
+            // Free any unmanaged objects here.
+            //
+            disposed = true;
+        }
     }
 }
