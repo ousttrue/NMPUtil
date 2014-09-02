@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C57060
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NMPUtil.MsgPack", "NMPUtil.MsgPack\NMPUtil.MsgPack.csproj", "{841BB23D-118C-437D-A846-B3E4B0630209}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NMPUtil.MsgPack.Rpc", "NMPUtil.MsgPack.Rpc\NMPUtil.MsgPack.Rpc.csproj", "{3200E456-E4C2-4A2F-913B-D2134965C62D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{841BB23D-118C-437D-A846-B3E4B0630209}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{841BB23D-118C-437D-A846-B3E4B0630209}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{841BB23D-118C-437D-A846-B3E4B0630209}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

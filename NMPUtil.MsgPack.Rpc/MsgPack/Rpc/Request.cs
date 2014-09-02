@@ -9,12 +9,33 @@ namespace NMPUtil.MsgPack.Rpc
 {
     public class Request
     {
-        public Byte TypeId
+        public UInt32 ID
         {
-            get { return 0; }
+            get;
+            set;
         }
-        UInt32 id;
-        String Method;
-        Object[] Params;
+
+        public String Method
+        {
+            get;
+            set;
+        }
+
+        public Object[] Params
+        {
+            get;
+            set;
+        }
+
+        [MsgPackPacker]
+        static public void Packer(MsgPackPacker p, Object o)
+        {
+            var v = (Request)o;
+            p.Pack_Array(4);
+            p.Pack((Byte)0);
+            p.Pack(v.ID);
+            p.Pack(v.Method);
+            p.Pack(v.Params);
+        }
     }
 }

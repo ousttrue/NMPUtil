@@ -10,7 +10,7 @@ MsgPackのC#実装。
 * NuGetに登録する
 
 # 使い方
-
+## Pack
     var ms = new MemoryStream();
     var packer = new MsgPackPacker(ms);
     packer.Pack_Array(4);
@@ -20,6 +20,7 @@ MsgPackのC#実装。
     packer.PackNil();
     var bytes = ms.ToArray();
     
+## Unpack(参照型)
     var unpacker = new MsgPackUnpacker(bytes);
     
     var a=new Object[unpacker.MemberCount];
@@ -30,4 +31,15 @@ MsgPackのC#実装。
     Assert.AreEqual(1, a[1]);
     Assert.False((Boolean)a[2]);
     Assert.AreEqual(null, a[3]);
+
+## Unpack(値型)
+
+## Traverse
+
+# 既存の型のPack, Unpack
+
+# 自前の型のPack, Unpack
+
+# RPC
+- https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md
 
