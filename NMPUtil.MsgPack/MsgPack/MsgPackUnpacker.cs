@@ -11,38 +11,6 @@ namespace NMPUtil.MsgPack
 {
     public partial class MsgPackUnpacker
     {
-        #region exception
-        public class InvalidByteException : Exception
-        {
-            public InvalidByteException()
-            {
-            }
-            public InvalidByteException(string message)
-                : base(message)
-            {
-            }
-            public InvalidByteException(string message, Exception inner)
-                : base(message, inner)
-            {
-            }
-        }
-
-        public class NotEnoughByteException : Exception
-        {
-            public NotEnoughByteException()
-            {
-            }
-            public NotEnoughByteException(string message)
-                : base(message)
-            {
-            }
-            public NotEnoughByteException(string message, Exception inner)
-                : base(message, inner)
-            {
-            }
-        }
-        #endregion
-
         #region read
         ArraySegment<Byte> _view;
         public Int32 Pos
@@ -282,7 +250,9 @@ namespace NMPUtil.MsgPack
                     return;
 
                 case MsgPackFormat.ARRAY32:
-                    throw new NotImplementedException();
+                    Format = t;
+                    MemberCount = ReadUInt32();
+                    return;
 
                 case MsgPackFormat.MAP16:
                     Format = t;
@@ -290,7 +260,9 @@ namespace NMPUtil.MsgPack
                     return;
 
                 case MsgPackFormat.MAP32:
-                    throw new NotImplementedException();
+                    Format = t;
+                    MemberCount = ReadUInt32();
+                    return;
             }
 
             if (HeadByte < MsgPackFormat.FIX_MAP.Mask())
@@ -322,7 +294,7 @@ namespace NMPUtil.MsgPack
                 return;
             }
 
-            throw new InvalidOperationException("UNKNOWN FIRST BYTE");
+            throw new InvalidOperationException("unknown HeadByte "+HeadByte);
         }
 
         public Object UnpackGeneric(Type type)
@@ -485,7 +457,7 @@ namespace NMPUtil.MsgPack
                     return UnpackMap<T>();
 
                 default:
-                    throw new InvalidOperationException("NOT REACH HERE !");
+                    throw new InvalidOperationException("invalid format "+Format);
             }
         }
 
@@ -616,7 +588,7 @@ namespace NMPUtil.MsgPack
                     break;
 
                 default:
-                    throw new InvalidOperationException("NOT REACH HERE !");
+                    throw new InvalidOperationException("invalid format "+Format);
             }
         }
 
@@ -638,7 +610,7 @@ namespace NMPUtil.MsgPack
                 {
                     //var target = o as Object[];
                     if(target.Length<count){
-                        throw new InvalidOperationException();
+                        throw new ArgumentException("count");
                     }
                     for (uint i = 0; i < count; ++i)
                     {
@@ -740,7 +712,7 @@ namespace NMPUtil.MsgPack
                 }
             }
 
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("no handle for "+typeof(T));
         }
 
         ArraySegment<Byte> UnpackArray<T>(T t) where T : class
@@ -755,7 +727,7 @@ namespace NMPUtil.MsgPack
                 }
             }
 
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("no handle for " + typeof(T));
         }
         #endregion
 
@@ -930,7 +902,7 @@ namespace NMPUtil.MsgPack
             }
 
             // add generics
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("no handle for "+typeof(T));
         }
 
         ArraySegment<Byte> UnpackMap<T>(T t) where T : class
@@ -945,7 +917,7 @@ namespace NMPUtil.MsgPack
                 }
             }
 
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("no handle for "+typeof(T));
         }
         #endregion
     }

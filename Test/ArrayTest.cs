@@ -47,7 +47,7 @@ namespace UnitTest
         {
             var ms = new MemoryStream();
             var packer = new MsgPackPacker(ms);
-            int size = 20;
+            uint size = 20;
             packer.Pack_Array(size);
             for (int i = 0; i < size; ++i)
             {

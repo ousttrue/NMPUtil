@@ -9,20 +9,22 @@ using System.Threading.Tasks;
 
 namespace NMPUtil.MsgPack
 {
+
+
     public class MsgPackPacker
     {
-        public BinaryWriter Writer
+        public NetworkEndianBinaryWriter Writer
         {
             get;
             private set;
         }
 
-        public MsgPackPacker(BinaryWriter w)
+        public MsgPackPacker(NetworkEndianBinaryWriter w)
         {
             Writer=w;
         }
 
-        public MsgPackPacker(Stream s):this(new BinaryWriter(s))
+        public MsgPackPacker(Stream s):this(new NetworkEndianBinaryWriter(s))
         {
         }
 
@@ -109,75 +111,61 @@ namespace NMPUtil.MsgPack
         public void Pack(Byte n)
         {
             Writer.Write(MsgPackFormat.UINT8.Mask());
-            Writer.Write((Byte)n);
+            Writer.Write(n);
         }
 
         public void Pack(UInt16 n)
         {
             Writer.Write(MsgPackFormat.UINT16.Mask());
-            Writer.Write(IPAddress.HostToNetworkOrder((Int16)n));
+            Writer.Write(n);
         }
 
         public void Pack(UInt32 n)
         {
             Writer.Write(MsgPackFormat.UINT32.Mask());
-            Writer.Write(IPAddress.HostToNetworkOrder((Int32)n));
+            Writer.Write(n);
         }
 
         public void Pack(UInt64 n)
         {
             Writer.Write(MsgPackFormat.UINT64.Mask());
-            Writer.Write(IPAddress.HostToNetworkOrder((Int64)n));
+            Writer.Write(n);
         }
 
         public void Pack(SByte n)
         {
             Writer.Write(MsgPackFormat.INT8.Mask());
-            Writer.Write((Byte)(n));
+            Writer.Write(n);
         }
 
         public void Pack(Int16 n)
         {
             Writer.Write(MsgPackFormat.INT16.Mask());
-            Writer.Write(IPAddress.HostToNetworkOrder(n));
+            Writer.Write(n);
         }
 
         public void Pack(Int32 n)
         {
             Writer.Write(MsgPackFormat.INT32.Mask());
-            Writer.Write(IPAddress.HostToNetworkOrder(n));
+            Writer.Write(n);
         }
 
         public void Pack(Int64 n)
         {
             Writer.Write(MsgPackFormat.INT64.Mask());
-            Writer.Write(IPAddress.HostToNetworkOrder(n));
+            Writer.Write(n);
         }
 
         public void Pack(Single n)
         {
             Writer.Write(MsgPackFormat.FLOAT.Mask());
-            if (BitConverter.IsLittleEndian)
-            {
-                Writer.Write(BitConverter.GetBytes(n).Reverse().ToArray());
-            }
-            else
-            {
-                Writer.Write(n);
-            }
+            Writer.Write(n);
         }
 
         public void Pack(Double n)
         {
             Writer.Write(MsgPackFormat.DOUBLE.Mask());
-            if (BitConverter.IsLittleEndian)
-            {
-                Writer.Write(BitConverter.GetBytes(n).Reverse().ToArray());
-            }
-            else
-            {
-                Writer.Write(n);
-            }
+            Writer.Write(n);
         }
 
         public void Pack(String s)
@@ -206,7 +194,7 @@ namespace NMPUtil.MsgPack
             else
             {
                 Writer.Write(MsgPackFormat.STR32.Mask());
-                Writer.Write(size);
+                Writer.Write((UInt32)size);
             }
             Writer.Write(bytes);
         }
@@ -227,12 +215,12 @@ namespace NMPUtil.MsgPack
             else
             {
                 Writer.Write(MsgPackFormat.BIN32.Mask());
-                Writer.Write(size);
+                Writer.Write((UInt32)size);
             }
             Writer.Write(bytes.ToArray());
         }
 
-        public void Pack_Array(Int32 n)
+        public void Pack_Array(UInt32 n)
         {
             if (n < 0x0F)
             {
@@ -241,16 +229,16 @@ namespace NMPUtil.MsgPack
             else if (n < 0xFFFF)
             {
                 Writer.Write(MsgPackFormat.ARRAY16.Mask());
-                Writer.Write((Byte)(n >> 8 & 0xff));
-                Writer.Write((Byte)(n & 0xff));
+                Writer.Write((UInt16)n);
             }
             else
             {
-                throw new NotImplementedException("not implemented");
+                Writer.Write(MsgPackFormat.ARRAY32.Mask());
+                Writer.Write((UInt32)n);
             }
         }
 
-        public void Pack_Map(Int32 n)
+        public void Pack_Map(UInt32 n)
         {
             if (n < 0x0F)
             {
@@ -259,12 +247,12 @@ namespace NMPUtil.MsgPack
             else if (n < 0xFFFF)
             {
                 Writer.Write(MsgPackFormat.MAP16.Mask());
-                Writer.Write((Byte)(n >> 8 & 0xff));
-                Writer.Write((Byte)(n & 0xff));
+                Writer.Write((UInt16)n);
             }
             else
             {
-                throw new NotImplementedException("not implemented");
+                Writer.Write(MsgPackFormat.MAP32.Mask());
+                Writer.Write((UInt32)n);
             }
         }
 
@@ -283,6 +271,7 @@ namespace NMPUtil.MsgPack
                 return;
             }
 
+            // search MsgPackPackerAttribute
             foreach(var m in type.GetMethods())
             {
                 var a=m.GetCustomAttribute<MsgPackPackerAttribute>();
@@ -295,6 +284,7 @@ namespace NMPUtil.MsgPack
                 }
             }
 
+            // create default property packer
             {
                 var pilist = type.GetProperties(
                     BindingFlags.Public | BindingFlags.Instance).Where(pi =>
@@ -305,7 +295,7 @@ namespace NMPUtil.MsgPack
 
                 if (pilist.Length > 0)
                 {
-                    Pack_Map(pilist.Length);
+                    Pack_Map((UInt32)pilist.Length);
                     foreach (var pi in pilist)
                     {
                         Pack(pi.Name);
@@ -316,7 +306,7 @@ namespace NMPUtil.MsgPack
                 }
             }
 
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("no handle for "+ type);
         }
     }
 }
