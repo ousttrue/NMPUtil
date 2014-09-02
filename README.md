@@ -5,9 +5,6 @@ MsgPackのC#実装。
 
 # ToDo
 
-*　文字列型対応
-* 属性によるPack関数の登録機能
-* 属性によるUnPack関数の登録機能
 * RPC実装
 * Unityで試す
 * NuGetに登録する

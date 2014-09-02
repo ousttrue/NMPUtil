@@ -26,7 +26,7 @@ namespace UnitTest
                     MsgPackFormat.FIX_STR.InvMask());
         }
 
-        //[Test]
+        [Test]
         public void positive_fixnum() 
         {
             for(Byte i=0; i<128; ++i){
@@ -43,7 +43,7 @@ namespace UnitTest
             }
         }
 
-        //[Test]
+        [Test]
         public void negative_fixnum() 
         {
             Byte mask=Convert.ToByte("11100000", 2);
@@ -52,9 +52,9 @@ namespace UnitTest
                 var packer = new MsgPackPacker(ms);
                 packer.Pack(i);
                 var bytes=ms.ToArray();
-                //Assert.AreEqual(new Byte[] { 0xE0 }, bytes);
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
+                Assert.AreEqual(MsgPackFormat.NEGATIVE_FIXNUM, unpacker.Format);
 
                 var j=unpacker.Unpack<sbyte>();
                 Assert.AreEqual(i, j);

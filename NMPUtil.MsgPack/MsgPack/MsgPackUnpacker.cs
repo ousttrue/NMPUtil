@@ -12,6 +12,23 @@ namespace NMPUtil.MsgPack
     public partial class MsgPackUnpacker
     {
         #region read
+        public class NotEnoughBytesException : InvalidOperationException
+        {
+            public NotEnoughBytesException()
+            {
+            }
+
+            public NotEnoughBytesException(string message)
+                : base(message)
+            {
+            }
+
+            public NotEnoughBytesException(string message, Exception inner)
+                : base(message, inner)
+            {
+            }
+        }
+
         ArraySegment<Byte> _view;
         public Int32 Pos
         {
@@ -39,39 +56,42 @@ namespace NMPUtil.MsgPack
             private set;
         }
 
+        IEnumerable<Byte> ReadBytes(Int32 size)
+        {
+            if(Pos+size>_view.Count){
+                throw new NotEnoughBytesException("ReadBytes "+size);
+            }
+            var b = _view.Skip(Pos).Take(size);
+            Advance(size);
+            return b;
+        }
+
         SByte ReadSByte()
         {
-            var b = _view.Skip(Pos).First();
-            Advance(1);
-            return (SByte)b;
+            return (SByte)ReadBytes(1).First();
         }
 
         Int16 ReadInt16()
         {
-            var b = _view.Skip(Pos).Take(2);
-            Advance(2);
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt16(b.ToArray(), 0));
+            return IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt16(ReadBytes(2).ToArray(), 0));
         }
 
         Int32 ReadInt32()
         {
-            var b = _view.Skip(Pos).Take(4);
-            Advance(4);
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(b.ToArray(), 0));
+            return IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt32(ReadBytes(4).ToArray(), 0));
         }
 
         Int64 ReadInt64()
         {
-            var b = _view.Skip(Pos).Take(8);
-            Advance(8);
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(b.ToArray(), 0));
+            return IPAddress.NetworkToHostOrder(
+                BitConverter.ToInt64(ReadBytes(8).ToArray(), 0));
         }
 
         Byte ReadByte()
         {
-            var b = _view.Skip(Pos).First();
-            Advance(1);
-            return b;
+            return ReadBytes(1).First();
         }
 
         UInt16 ReadUInt16()
@@ -91,32 +111,24 @@ namespace NMPUtil.MsgPack
 
         Single ReadSingle()
         {
-            var b = _view.Skip(Pos).Take(4);
+            var b = ReadBytes(4);
             if (BitConverter.IsLittleEndian)
             {
                 b = b.Reverse();
             }
-            Advance(4);
             return BitConverter.ToSingle(b.ToArray(), 0);
         }
 
         Double ReadDouble()
         {
-            var b = _view.Skip(Pos).Take(8);
+            var b = ReadBytes(8);
             if (BitConverter.IsLittleEndian)
             {
                 b = b.Reverse();
             }
-            Advance(8);
             return BitConverter.ToDouble(b.ToArray(), 0);
         }
 
-        IEnumerable<Byte> ReadBytes(Int32 size)
-        {
-            var b = _view.Skip(Pos).Take(size);
-            Advance(size);
-            return b;
-        }
         #endregion
 
         #region format

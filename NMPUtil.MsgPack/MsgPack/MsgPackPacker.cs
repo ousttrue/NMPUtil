@@ -110,8 +110,15 @@ namespace NMPUtil.MsgPack
 
         public void Pack(Byte n)
         {
-            Writer.Write(MsgPackFormat.UINT8.Mask());
-            Writer.Write(n);
+            if (n <= 0x7F)
+            {
+                Writer.Write((Byte)(MsgPackFormat.POSITIVE_FIXNUM.Mask() | n));
+            }
+            else
+            {
+                Writer.Write(MsgPackFormat.UINT8.Mask());
+                Writer.Write(n);
+            }
         }
 
         public void Pack(UInt16 n)
@@ -134,8 +141,15 @@ namespace NMPUtil.MsgPack
 
         public void Pack(SByte n)
         {
-            Writer.Write(MsgPackFormat.INT8.Mask());
-            Writer.Write(n);
+            if (n < 0 && n >= -32)
+            {
+                Writer.Write(n);
+            }
+            else
+            {
+                Writer.Write(MsgPackFormat.INT8.Mask());
+                Writer.Write(n);
+            }
         }
 
         public void Pack(Int16 n)

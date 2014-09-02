@@ -18,21 +18,19 @@ namespace UnitTest
             var ms = new MemoryStream();
             var packer = new MsgPackPacker(ms);
             packer.Pack_Array(4);
-            packer.Pack(0);
-            packer.Pack(1);
+            packer.Pack((Byte)0);
+            packer.Pack((Byte)1);
             packer.Pack(false);
             packer.PackNil();
             var bytes = ms.ToArray();
 
-            /*
             Assert.AreEqual(new Byte[]{
                 0x94, 0x00, 0x01, 0xc2, 0xc0
             }, bytes);
-            */
 
             var unpacker = new MsgPackUnpacker(bytes.Take(2));
             
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Assert.Throws<MsgPackUnpacker.NotEnoughBytesException>(() =>
                 {
                     var o=new Object[unpacker.MemberCount];
                     unpacker.Unpack(ref o);
