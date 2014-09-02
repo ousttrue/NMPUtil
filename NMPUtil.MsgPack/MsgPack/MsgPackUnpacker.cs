@@ -622,7 +622,7 @@ namespace NMPUtil.MsgPack
 
 
         public delegate void UnpackerForReferenceTypeDelegate<in T>(T target, MsgPackUnpacker unpacker, UInt32 count);
-        public delegate void UnpackerForValueTypeDelegate<T>(ref T target, MsgPackUnpacker unpacker, UInt32 count);
+        public delegate T UnpackerForValueTypeDelegate<T>(MsgPackUnpacker unpacker, UInt32 count);
 
         #region UnpackArray
         static Dictionary<Type, Object> _unpackArrayMapVal =
@@ -723,10 +723,8 @@ namespace NMPUtil.MsgPack
             {
                 if (kv.Key.IsAssignableFrom(typeof(T)))
                 {
-                    var unpackMap = (UnpackerForValueTypeDelegate<T>)kv.Value;
-                    var t = default(T);
-                    unpackMap(ref t, this, MemberCount);
-                    return t;
+                    var unpacker = (UnpackerForValueTypeDelegate<T>)kv.Value;
+                    return unpacker(this, MemberCount);
                 }
             }
 
@@ -736,8 +734,7 @@ namespace NMPUtil.MsgPack
                 if (a != null)
                 {
                     var callback = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
-                    var t=default(T);
-                    callback(ref t, this, MemberCount);
+                    var t=callback(this, MemberCount);
                     AddUnpackArray<T>(callback);
                     return t; 
                 }
@@ -927,10 +924,8 @@ namespace NMPUtil.MsgPack
             {
                 if (kv.Key.IsAssignableFrom(typeof(T)))
                 {
-                    var unpackMap = (UnpackerForValueTypeDelegate<T>)kv.Value;
-                    var t = default(T);
-                    unpackMap(ref t, this, MemberCount);
-                    return t;
+                    var unpacker= (UnpackerForValueTypeDelegate<T>)kv.Value;
+                    return unpacker(this, MemberCount);
                 }
             }
 

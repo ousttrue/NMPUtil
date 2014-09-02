@@ -57,15 +57,17 @@ namespace UnitTest
         }
 
         [MsgPackArrayUnpacker]
-        static public void Unpack(ref Vector3 v, MsgPackUnpacker u, UInt32 count)
+        static public Vector3 Unpack(MsgPackUnpacker u, UInt32 count)
         {
             if (count != 3)
             {
                 throw new ArgumentException("count");
             }
+            var v = new Vector3();
             v._x = u.UnpackSub<Single>();
             v._y = u.UnpackSub<Single>();
             v._z = u.UnpackSub<Single>();
+            return v;
         }
     }
 
@@ -117,18 +119,17 @@ namespace UnitTest
                 p.Pack(color.B);
             });
             MsgPackUnpacker.AddUnpackArray<System.Drawing.Color>(
-                (ref System.Drawing.Color o, MsgPackUnpacker u, UInt32 size) =>
+                (MsgPackUnpacker u, UInt32 size) =>
                 {
-                    // check map size
                     if (size != 4)
                     {
-                        throw new ArgumentException("invalid map size");
+                        throw new ArgumentException("size");
                     }
-                    Byte a = u.UnpackSub<Byte>();
-                    Byte r = u.UnpackSub<Byte>();
-                    Byte g = u.UnpackSub<Byte>();
-                    Byte b = u.UnpackSub<Byte>();
-                    o = System.Drawing.Color.FromArgb(a, r, g, b);
+                    var a = u.UnpackSub<Byte>();
+                    var r = u.UnpackSub<Byte>();
+                    var g = u.UnpackSub<Byte>();
+                    var b = u.UnpackSub<Byte>();
+                    return System.Drawing.Color.FromArgb(a, r, g, b);
                 });
       
             // pack
