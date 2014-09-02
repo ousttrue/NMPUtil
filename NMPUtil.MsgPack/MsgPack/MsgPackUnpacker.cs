@@ -624,81 +624,9 @@ namespace NMPUtil.MsgPack
         static Dictionary<Type, Object> _unpackArrayMapVal =
             new Dictionary<Type, Object>();
         static Dictionary<Type, Object> _unpackArrayMapRef =
-            new Dictionary<Type, Object>
-        {
-            {
-                  typeof(Object[])
-                , (Object)(UnpackerForReferenceTypeDelegate<Object[]>)( 
-                (Object[] target, SubMsgPackUnpacker unpacker, UInt32 count)=>
+            new Dictionary<Type, Object>();
 
-                {
-                    if(target.Length<count){
-                        throw new ArgumentException("count");
-                    }
-                    for (uint i = 0; i < count; ++i)
-                    {
-                        unpacker.ParseHeadByte();
 
-                        if (unpacker.IsArray)
-                        {
-                            var val=new List<Object>();
-                            unpacker.Unpack(ref val);
-                            target[i] = val;
-                        }
-                        else if (unpacker.IsMap)
-                        {
-                            var val=new Dictionary<String, Object>();
-                            unpacker.Unpack(ref val);
-                            target[i] = val;
-                        }
-                        else
-                        {
-                            var val = new Object();
-                            unpacker.Unpack(ref val);
-                            target[i] = val;
-                        }
-                    }
-                    Console.WriteLine(target);
-                })
-            }
-
-            , {
-                typeof(IList<Object>)
-                , (Object)(UnpackerForReferenceTypeDelegate<IList<Object>>)(
-                (IList<Object> target, SubMsgPackUnpacker unpacker, UInt32 count)=>
-
-                {
-                    for (uint i = 0; i < count; ++i)
-                    {
-                        unpacker.ParseHeadByte();
-
-                            var sub = unpacker.GetSubUnpacker();
-                            if (sub.IsArray)
-                            {
-                                var val = new List<Object>();
-                                unpacker.Unpack(ref val);
-                                target.Add(val);
-                            }
-                            else if (sub.IsMap)
-                            {
-                                var val = new Dictionary<String, Object>();
-                                unpacker.Unpack(ref val);
-                                target.Add(val);
-                            }
-                            else
-                            {
-                                var val = new Object();
-                                unpacker.Unpack(ref val);
-                                target.Add(val);
-                            }
-
-                    }
-                    Console.WriteLine(target);
-                }
-                )
-                }
-
-        };
         static public void AddUnpackArray<T>(UnpackerForReferenceTypeDelegate<T> unpacker) where T : class
         {
             _unpackArrayMapRef.Add(typeof(T), unpacker);
@@ -740,6 +668,30 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
+        static public void UnpackArrayAsArray<T>(T[] array, SubMsgPackUnpacker unpacker, UInt32 count) where T : class
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                unpacker.ParseHeadByte();
+                if (array[i] == null)
+                {
+                    array[i] = Activator.CreateInstance<T>();
+                }
+                unpacker.Unpack(ref array[i]);
+            }
+        }
+
+        static public void UnpackArrayAsList<T>(List<T> list, SubMsgPackUnpacker unpacker, UInt32 count) where T : class
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                unpacker.ParseHeadByte();
+                var o=Activator.CreateInstance<T>();
+                unpacker.Unpack(ref o);
+                list.Add(o);
+            }
+        }
+
         void UnpackArray<T>(T t) where T : class
         {
             foreach (var kv in _unpackArrayMapRef)
@@ -752,6 +704,36 @@ namespace NMPUtil.MsgPack
                         handler(t, sub, MemberCount);
                         return;
                     }
+                }
+            }
+
+            if (t is Array)
+            {
+                var et = typeof(T).GetElementType();
+                var gmi = GetType().GetMethod("UnpackArrayAsArray");
+                var mi = gmi.MakeGenericMethod(new Type[] { et });
+                var handler = (UnpackerForReferenceTypeDelegate<T>)mi.CreateDelegate(typeof(UnpackerForReferenceTypeDelegate<T>));
+
+                using (var sub = GetSubUnpacker())
+                {
+                    handler(t, sub, MemberCount);
+                    AddUnpackArray<T>(handler);
+                    return;
+                }
+            }
+
+            if (t is IList)
+            {
+                var et = typeof(T).GetGenericArguments()[0];
+                var gmi = GetType().GetMethod("UnpackArrayAsList");
+                var mi = gmi.MakeGenericMethod(new Type[] { et });
+                var handler = (UnpackerForReferenceTypeDelegate<T>)mi.CreateDelegate(typeof(UnpackerForReferenceTypeDelegate<T>));
+
+                using (var sub = GetSubUnpacker())
+                {
+                    handler(t, sub, MemberCount);
+                    AddUnpackArray<T>(handler);
+                    return;
                 }
             }
 
@@ -923,7 +905,7 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
-        ArraySegment<Byte> UnpackMap<T>(T t) where T : class
+        void UnpackMap<T>(T t) where T : class
         {
             foreach (var kv in _unpackMapMapRef)
             {
@@ -934,7 +916,7 @@ namespace NMPUtil.MsgPack
                     {
                         unpackMap(t, sub, MemberCount);
                     }
-                    return GetRemain();
+                    return;
                 }
             }
 

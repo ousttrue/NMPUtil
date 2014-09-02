@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -294,6 +295,19 @@ namespace NMPUtil.MsgPack
                     var callback = (PackerDelegate)m.CreateDelegate(typeof(PackerDelegate));
                     callback(this, o);
                     TypeMap.Add(type, callback);
+                    return;
+                }
+            }
+
+            {
+                var ie = o as IEnumerable<Object>;
+                if (ie!=null)
+                {
+                    Pack_Array((UInt32)ie.Count());
+                    foreach (var item in ie)
+                    {
+                        Pack(item);
+                    }
                     return;
                 }
             }
