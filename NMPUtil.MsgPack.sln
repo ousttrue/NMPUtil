@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NMPUtil.MsgPack", "NMPUtil.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NMPUtil.MsgPack.Rpc", "NMPUtil.MsgPack.Rpc\NMPUtil.MsgPack.Rpc.csproj", "{3200E456-E4C2-4A2F-913B-D2134965C62D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleTcp", "SampleTcp\SampleTcp.csproj", "{35D252BF-FC2D-43E5-B516-E93D51A916B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3200E456-E4C2-4A2F-913B-D2134965C62D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35D252BF-FC2D-43E5-B516-E93D51A916B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35D252BF-FC2D-43E5-B516-E93D51A916B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35D252BF-FC2D-43E5-B516-E93D51A916B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35D252BF-FC2D-43E5-B516-E93D51A916B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
