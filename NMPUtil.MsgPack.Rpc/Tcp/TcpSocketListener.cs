@@ -22,38 +22,34 @@ namespace NMPUtil.Tcp
 
         IPEndPoint _endpoint;
         Socket _listener;
+        Task _task;
 
-
-        public void Listen(IPEndPoint endpoint)
+        public void Bind(IPEndPoint endpoint)
         {
-            this._endpoint=endpoint;
+            this._endpoint = endpoint;
             _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _listener.Bind(endpoint);
             _listener.Listen(10);
 
-            BeginAccept();
-            Console.WriteLine(String.Format("begin Listen {0} ...", endpoint));
+            Console.WriteLine(String.Format("bind {0} ...", endpoint));
         }
 
-        void BeginAccept()
+        public void BeginAccept()
         {
-            AsyncCallback callback = (IAsyncResult ar) =>
+            if (_task != null)
             {
-                var socket = ar.AsyncState as Socket;
-                Socket newSocket = socket.EndAccept(ar);
-
-                EmitAcceptedEvent(newSocket);   
-
-                // next...
-                BeginAccept();
-            };
-
-            _listener.BeginAccept(callback, _listener);
-            Console.WriteLine("accepting...");
+                return;
+            }
+            _task = Task<Socket>.Factory.FromAsync(_listener.BeginAccept, _listener.EndAccept, null)
+                .ContinueWith(t => EmitAcceptedEvent(t.Result))
+                .ContinueWith(t => _task=null)
+                .ContinueWith(t => BeginAccept())
+                ;
         }
 
         public void ShutDown()
         {
+            _task = null;
             _listener.Close();
             _listener = null;
         }

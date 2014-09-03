@@ -42,6 +42,10 @@ namespace Simple
 
             {
                 var streamManager = new NMPUtil.Streams.StreamManager();
+                streamManager.StreamReadEvent += (Object o, NMPUtil.Streams.StreamReadEventArgs e) =>
+                {
+                    Console.WriteLine(String.Format("read {0} bytes", e.Bytes.Count));
+                };
 
                 var server = new NMPUtil.Tcp.TcpSocketListener();
                 server.AcceptedEvent += streamManager.OnTcpSocketConnected;
@@ -50,12 +54,8 @@ namespace Simple
                     Console.WriteLine("accepted");
                 };
 
-                streamManager.StreamReadEvent += (Object o, NMPUtil.Streams.StreamReadEventArgs e) =>
-                {
-                    Console.WriteLine(String.Format("read {0} bytes", e.Bytes.Count));
-                };
-
-                server.Listen(NMPUtil.Tcp.TcpUtil.EndPoint("", 8080));
+                server.Bind(NMPUtil.Tcp.TcpUtil.EndPoint("", 8080));
+                server.BeginAccept();
 
                 var client = new NMPUtil.Tcp.TcpSocketConnector();
                 client.ConnectedEvent += streamManager.OnTcpSocketConnected;
