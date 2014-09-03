@@ -12,30 +12,21 @@ namespace NMPUtil.Streams
     {
         List<AsyncStream> _streams = new List<AsyncStream>();
 
-        public event EventHandler<StreamReadEventArgs> StreamReadEvent;
-        void OnRead(Object o, StreamReadEventArgs args)
-        {
-            var temp = StreamReadEvent;
-            if (temp != null)
-            {
-                // through
-                temp(o, args);
-            }
-        }
-
         public StreamManager()
         {
 
         }
 
-        public void AddStream(Stream s)
+        public AsyncStream AddStream(Stream s)
         {
             var stream = new AsyncStream(s);
-            stream.ReadEvent += OnRead;
+
             _streams.Add(stream);
 
             // async read
             stream.BeginRead();
+
+            return stream;
         }
 
         AsyncStream GetStreamFrom(Stream stream)
