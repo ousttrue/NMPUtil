@@ -9,12 +9,6 @@ using System.Threading.Tasks;
 
 namespace NMPUtil.Tcp
 {
-    public class TcpSocketEventArgs : EventArgs
-    {
-        public Socket Socket;
-    }
-
-
     public static class TcpUtil
     {
         static public IPEndPoint EndPoint(String host, Int32 port)

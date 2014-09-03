@@ -31,6 +31,10 @@ namespace NMPUtil.Streams
         }
 
         Stream _s;
+        public Stream Stream
+        {
+            get { return _s; }
+        }
 
         public AsyncStream(Stream s, Int32 bufferSize = 1024)
         {

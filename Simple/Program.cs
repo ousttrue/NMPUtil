@@ -8,6 +8,9 @@ using NMPUtil.MsgPack;
 using NMPUtil.MsgPack.Rpc;
 using System.Diagnostics;
 using System.Net.Sockets;
+using NMPUtil.Streams;
+using NMPUtil.Tcp;
+using System.Threading;
 
 
 namespace Simple
@@ -40,41 +43,76 @@ namespace Simple
                 Console.WriteLine(result);
             }
 
+            var streamManager = new NMPUtil.Streams.StreamManager();
+
+            // setup server
+            var server = new NMPUtil.Tcp.TcpSocketListener();
             {
-                var streamManager = new NMPUtil.Streams.StreamManager();
-                streamManager.StreamReadEvent += (Object o, NMPUtil.Streams.StreamReadEventArgs e) =>
+                streamManager.StreamReadEvent += (Object o, StreamReadEventArgs e) =>
                 {
                     Console.WriteLine(String.Format("read {0} bytes", e.Bytes.Count));
                 };
 
-                var server = new NMPUtil.Tcp.TcpSocketListener();
-                server.AcceptedEvent += streamManager.OnTcpSocketConnected;
-                server.AcceptedEvent += (Object o, NMPUtil.Tcp.TcpSocketEventArgs e) =>
+                server.Task.ContinueWith(t =>
                 {
+                    streamManager.AddStream(t.Result);
                     Console.WriteLine("accepted");
-                };
+                });
 
-                server.Bind(NMPUtil.Tcp.TcpUtil.EndPoint("", 8080));
+                server.Bind(TcpUtil.EndPoint("", 8080));
                 server.BeginAccept();
-
-                var client = new NMPUtil.Tcp.TcpSocketConnector();
-                client.ConnectedEvent += streamManager.OnTcpSocketConnected;
-                client.ConnectedEvent += (Object o, NMPUtil.Tcp.TcpSocketEventArgs e) =>
-                {
-                    Console.WriteLine("connected");
-                };
-
-                client.Connect(NMPUtil.Tcp.TcpUtil.EndPoint("127.0.0.1", 8080));
-
-                for (int i = 0; i < 10; ++i)
-                {
-                    Console.WriteLine(i);
-                    System.Threading.Thread.Sleep(1000);
-
-                    var msg = new Byte[] { (Byte)i };
-                    var sendbytes=client.Socket.Send(msg, 0, msg.Length, SocketFlags.None);
-                }
             }
+
+            // setup client
+            var client = new NMPUtil.Tcp.TcpSocketConnector();
+            var task = client.Task
+                .ContinueWith(t =>
+                {
+                    streamManager.AddStream(t.Result);
+                    Console.WriteLine("connected");
+                    return t.Result;
+                })
+                .ContinueWith(t =>
+                {
+                    var bytes = new Byte[] { 1 };
+                    t.Result.Write(bytes, 0, bytes.Length);
+                    Thread.Sleep(1000);
+                    return t.Result;
+                })
+                .ContinueWith(t =>
+                {
+                    var bytes = new Byte[] { 1, 2 };
+                    t.Result.Write(bytes, 0, bytes.Length);
+                    Thread.Sleep(1000);
+                    return t.Result;
+                })
+                .ContinueWith(t =>
+                {
+                    var bytes = new Byte[] { 1, 2, 3 };
+                    t.Result.Write(bytes, 0, bytes.Length);
+                    Thread.Sleep(1000);
+                    return t.Result;
+                })
+                .ContinueWith(t =>
+                {
+                    var bytes = new Byte[] { 1, 2, 3, 4 };
+                    t.Result.Write(bytes, 0, bytes.Length);
+                    Thread.Sleep(1000);
+                    return t.Result;
+                })
+                .ContinueWith(t =>
+                {
+                    var bytes = new Byte[] { 1, 2, 3, 4, 5 };
+                    t.Result.Write(bytes, 0, bytes.Length);
+                    Thread.Sleep(1000);
+                    return t.Result;
+                })
+                ;
+
+            client.Connect(TcpUtil.EndPoint("127.0.0.1", 8080));
+            task.Wait();
+            Console.WriteLine("task completed");
+            Thread.Sleep(1000);
         }
     }
 }

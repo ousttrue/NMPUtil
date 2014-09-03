@@ -8,23 +8,6 @@ using System.Threading.Tasks;
 
 namespace NMPUtil.Streams
 {
-    public class StreamReadEventArgs : EventArgs
-    {
-        /*
-        public Byte[] Bytes
-        {
-            get;
-            set;
-        }
-         */
-        public ArraySegment<Byte> Bytes
-        {
-            get;
-            set;
-        }
-    }
-
-
     public class StreamManager
     {
         List<AsyncStream> _streams = new List<AsyncStream>();
@@ -55,14 +38,9 @@ namespace NMPUtil.Streams
             stream.BeginRead();
         }
 
-        public void OnTcpSocketConnected(Object o, NMPUtil.Tcp.TcpSocketEventArgs e)
+        AsyncStream GetStreamFrom(Stream stream)
         {
-            var s = e.Socket;
-            if (s == null)
-            {
-                return;
-            }
-            AddStream(new NetworkStream(s, true));
+            return _streams.Find(s => s.Stream == stream);
         }
     }
 }

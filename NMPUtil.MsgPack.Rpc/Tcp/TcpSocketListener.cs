@@ -1,5 +1,7 @@
-﻿using System;
+﻿using NMPUtil.Streams;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -10,24 +12,25 @@ namespace NMPUtil.Tcp
 {
     public class TcpSocketListener
     {
-        public event EventHandler<TcpSocketEventArgs> AcceptedEvent;
-        void EmitAcceptedEvent(Socket socket)
+        IPEndPoint _endpoint;
+        Socket _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        TaskCompletionSource<NetworkStream> _tcs = new TaskCompletionSource<NetworkStream>();
+
+        public Task<NetworkStream> Task
         {
-            var temp = AcceptedEvent;
-            if (temp != null)
+            get
             {
-                temp(this, new TcpSocketEventArgs { Socket = socket });
+                return _tcs.Task;
             }
         }
 
-        IPEndPoint _endpoint;
-        Socket _listener;
-        Task _task;
+        public TcpSocketListener()
+        {
+        }
 
         public void Bind(IPEndPoint endpoint)
         {
             this._endpoint = endpoint;
-            _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _listener.Bind(endpoint);
             _listener.Listen(10);
 
@@ -36,22 +39,21 @@ namespace NMPUtil.Tcp
 
         public void BeginAccept()
         {
-            if (_task != null)
+            Action<IAsyncResult> callback = (IAsyncResult ar) =>
             {
-                return;
-            }
-            _task = Task<Socket>.Factory.FromAsync(_listener.BeginAccept, _listener.EndAccept, null)
-                .ContinueWith(t => EmitAcceptedEvent(t.Result))
-                .ContinueWith(t => _task=null)
-                .ContinueWith(t => BeginAccept())
-                ;
+                var listener = ar.AsyncState as Socket;
+                var socket=listener.EndAccept(ar);
+
+                _tcs.SetResult(new NetworkStream(socket, true));
+
+                BeginAccept();
+            };
+            _listener.BeginAccept(new AsyncCallback(callback), _listener);
         }
 
         public void ShutDown()
         {
-            _task = null;
-            _listener.Close();
-            _listener = null;
+            _tcs.SetCanceled();
         }
     }
 }

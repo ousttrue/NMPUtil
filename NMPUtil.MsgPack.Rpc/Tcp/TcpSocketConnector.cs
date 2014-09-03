@@ -1,5 +1,7 @@
-﻿using System;
+﻿using NMPUtil.Streams;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -10,20 +12,11 @@ namespace NMPUtil.Tcp
 {
     public class TcpSocketConnector
     {
-        public event EventHandler<TcpSocketEventArgs> ConnectedEvent;
-        void EmitConnectedEvent(Socket socket)
-        {
-            var temp = ConnectedEvent;
-            if (temp != null)
-            {
-                temp(this, new TcpSocketEventArgs { Socket = socket });
-            }
-        }
+        TaskCompletionSource<NetworkStream> _tcs = new TaskCompletionSource<NetworkStream>();
 
-        public Socket Socket
+        public Task<NetworkStream> Task
         {
-            get;
-            private set;
+            get { return _tcs.Task; }
         }
 
         public void Connect(IPEndPoint endpoint)
@@ -31,10 +24,9 @@ namespace NMPUtil.Tcp
             Action<IAsyncResult> callback = (IAsyncResult ar) =>
             {
                 var socket = ar.AsyncState as Socket;
-                this.Socket = socket;
                 socket.EndConnect(ar);
 
-                EmitConnectedEvent(socket);
+                _tcs.SetResult(new NetworkStream(socket, true));
             };
 
             var newSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
