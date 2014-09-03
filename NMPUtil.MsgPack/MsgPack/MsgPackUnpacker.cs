@@ -201,6 +201,18 @@ namespace NMPUtil.MsgPack
             set;
         }
 
+        static public MethodInfo GenericReferenceUnpacker
+        {
+            get;
+            private set;
+        }
+
+        static public MethodInfo GenericValueUnpacker
+        {
+            get;
+            private set;
+        }
+
         public MsgPackUnpacker(IEnumerable<Byte> bytes, bool doParseHeadByte=true)
             : this(new ArraySegment<Byte>(bytes.ToArray()), doParseHeadByte)
         {}
@@ -217,6 +229,21 @@ namespace NMPUtil.MsgPack
             if (doParseHeadByte)
             {
                 ParseHeadByte();
+            }
+
+            if (GenericReferenceUnpacker == null)
+            {
+                foreach (var mi in GetType().GetMethods().Where(mi => mi.Name == "Unpack"))
+                {
+                    if (mi.ReturnType == typeof(void))
+                    {
+                        GenericReferenceUnpacker = mi;
+                    }
+                    else
+                    {
+                        GenericValueUnpacker = mi;
+                    }
+                }
             }
         }
 
@@ -328,49 +355,6 @@ namespace NMPUtil.MsgPack
             }
 
             return Format;
-        }
-
-        public Object UnpackGeneric(Type type)
-        {
-            foreach (var mi in GetType().GetMethods())
-            {
-                if (mi.Name == "Unpack")
-                {
-                    if (mi.ReturnType == typeof(void))
-                    {
-                    }
-                    else
-                    {
-                        var gmi = mi.MakeGenericMethod(new Type[] { type });
-                        return gmi.Invoke(this, new Object[] { });
-                    }
-                }
-            }
-            throw new InvalidOperationException();
-        }
-
-        public void UnpackGeneric(ref Object o, Type type)
-        {
-            foreach (var mi in GetType().GetMethods())
-            {
-                if (mi.Name == "Unpack")
-                {
-                    {
-                        if (mi.ReturnType == typeof(void))
-                        {
-                            var gmi = mi.MakeGenericMethod(new Type[] { type });
-                            var args=new Object[] { o };
-                            gmi.Invoke(this, args);
-                            o = args[0];
-                            return;
-                        }
-                        else
-                        {
-                        }
-                    }
-                }
-            }
-            throw new InvalidOperationException();
         }
 
         public T Unpack<T>()where T:struct
@@ -847,7 +831,8 @@ namespace NMPUtil.MsgPack
                             if (pi != null){
                                 if (pi.PropertyType.IsValueType)
                                 {
-                                    var v=unpacker.UnpackGeneric(pi.PropertyType);
+                                    var gmi =MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new Type[] { pi.PropertyType });
+                                    var v=gmi.Invoke(unpacker, new Object[] { });
                                     pi.SetValue(o, v, null);
                                 }
                                 else
@@ -864,8 +849,11 @@ namespace NMPUtil.MsgPack
                                             v = Activator.CreateInstance(pi.PropertyType);
                                         }
                                     }
-                                    unpacker.UnpackGeneric(ref v, pi.PropertyType);
-                                    pi.SetValue(o, v, null);
+
+                                    var gmi = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new Type[] { pi.PropertyType });
+                                    var args = new Object[] { v };
+                                    gmi.Invoke(unpacker, args);
+                                    pi.SetValue(o, args[0], null);
                                 }
                             }
                             else{

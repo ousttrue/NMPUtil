@@ -31,7 +31,6 @@ namespace SampleTcp
             server.Bind(TcpUtil.EndPoint("", 8080));
             server.BeginAccept();
 
-
             // setup client
             var client = new NMPUtil.Tcp.TcpSocketConnector();
             var tcs = new TaskCompletionSource<NetworkStream>();
