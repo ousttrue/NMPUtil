@@ -9,19 +9,17 @@ namespace NMPUtil.Streams
 {
     public class AsyncStream
     {
-        TaskCompletionSource<ArraySegment<Byte>> _readtcs;
-        Task<ArraySegment<Byte>> ReadTask
+        public event EventHandler<StreamReadEventArgs> ReadEvent;
+        void EmitReadEvent(ArraySegment<Byte> bytes)
         {
-            get { return _readtcs.Task; }
+            var tmp = ReadEvent;
+            if (tmp != null)
+            {
+                tmp(this, new StreamReadEventArgs { Bytes = bytes });
+            }
         }
         Byte[] _readBuffer;
-
-        public delegate void ReadAction(ArraySegment<Byte> bytes);
-        List<ReadAction> _readActions = new List<ReadAction>();
-        public void AddReadAction(ReadAction action)
-        {
-            _readActions.Add(action);
-        }
+        IAsyncResult _readIR;
 
         public event EventHandler CloseEvent;
         void EmitCloseEvent()
@@ -47,7 +45,7 @@ namespace NMPUtil.Streams
 
         public void Close()
         {
-            _readtcs.SetCanceled();
+            _s.EndRead(_readIR);
             _s.Close();
             EmitCloseEvent();
         }
@@ -65,19 +63,11 @@ namespace NMPUtil.Streams
                     return;
                 }
 
-                _readtcs.SetResult(new ArraySegment<Byte>(_readBuffer, 0, readbytes));
+                EmitReadEvent(new ArraySegment<Byte>(_readBuffer, 0, readbytes));
 
                 BeginRead();
             };
-            _readtcs = new TaskCompletionSource<ArraySegment<byte>>();
-            _readtcs.Task.ContinueWith(t =>
-            {
-                foreach (var action in _readActions)
-                {
-                    action(t.Result);
-                }
-            });
-            _s.BeginRead(_readBuffer, 0, _readBuffer.Length, new AsyncCallback(callback), this);
+            _readIR=_s.BeginRead(_readBuffer, 0, _readBuffer.Length, new AsyncCallback(callback), this);
         }
     }
 }

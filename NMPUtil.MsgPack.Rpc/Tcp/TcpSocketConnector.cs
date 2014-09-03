@@ -12,12 +12,17 @@ namespace NMPUtil.Tcp
 {
     public class TcpSocketConnector
     {
-        TaskCompletionSource<NetworkStream> _tcs = new TaskCompletionSource<NetworkStream>();
-
-        public Task<NetworkStream> Task
+        public event EventHandler<TcpSocketEventArgs> ConnectedEvent;
+        void EmitConnectedEvent(Socket socket)
         {
-            get { return _tcs.Task; }
+            var tmp = ConnectedEvent;
+            if (tmp != null)
+            {
+                tmp(this, new TcpSocketEventArgs { Socket = socket });
+            }
         }
+
+        IAsyncResult _ar;
 
         public void Connect(IPEndPoint endpoint)
         {
@@ -26,11 +31,11 @@ namespace NMPUtil.Tcp
                 var socket = ar.AsyncState as Socket;
                 socket.EndConnect(ar);
 
-                _tcs.SetResult(new NetworkStream(socket, true));
+                EmitConnectedEvent(socket);
             };
 
             var newSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            newSocket.BeginConnect(endpoint, new AsyncCallback(callback), newSocket);
+            _ar=newSocket.BeginConnect(endpoint, new AsyncCallback(callback), newSocket);
             Console.WriteLine(String.Format("connect to {0}...", endpoint));
         }
     }

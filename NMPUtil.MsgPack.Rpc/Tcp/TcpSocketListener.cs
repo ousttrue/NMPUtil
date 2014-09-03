@@ -14,14 +14,17 @@ namespace NMPUtil.Tcp
     {
         IPEndPoint _endpoint;
         Socket _listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        TaskCompletionSource<NetworkStream> _tcs;
 
-        public delegate void AcceptAction(NetworkStream s);
-        List<AcceptAction> _acceptActions = new List<AcceptAction>();
-        public void AddAcceptAction(AcceptAction action)
+        public EventHandler<TcpSocketEventArgs> AcceptedEvent;
+        void EmitAcceptedEvent(Socket socket)
         {
-            _acceptActions.Add(action);
+            var tmp = AcceptedEvent;
+            if (tmp != null)
+            {
+                tmp(this, new TcpSocketEventArgs { Socket = socket });
+            }
         }
+        IAsyncResult _ar;
 
         public TcpSocketListener()
         {
@@ -43,22 +46,19 @@ namespace NMPUtil.Tcp
                 var listener = ar.AsyncState as Socket;
                 var socket=listener.EndAccept(ar);
 
-                _tcs.SetResult(new NetworkStream(socket, true));
+                EmitAcceptedEvent(socket);
 
                 BeginAccept();
             };
-            _tcs = new TaskCompletionSource<NetworkStream>();
-            _tcs.Task.ContinueWith(t =>{
-                foreach(var action in _acceptActions){
-                    action(t.Result);
-                }
-            });
-            _listener.BeginAccept(new AsyncCallback(callback), _listener);
+            _ar=_listener.BeginAccept(new AsyncCallback(callback), _listener);
         }
 
         public void ShutDown()
         {
-            _tcs.SetCanceled();
+            if (_ar==null) {
+                return;
+            }
+            _listener.EndAccept(_ar);
         }
     }
 }

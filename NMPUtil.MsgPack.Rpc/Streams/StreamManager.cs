@@ -12,6 +12,24 @@ namespace NMPUtil.Streams
     {
         List<AsyncStream> _streams = new List<AsyncStream>();
 
+        public event EventHandler<StreamReadEventArgs> StreamReadEvent;
+        void EmitStreamReadEvent(ArraySegment<Byte> bytes)
+        {
+            var tmp = StreamReadEvent;
+            if (tmp != null)
+            {
+                tmp(this, new StreamReadEventArgs { Bytes = bytes });
+            }
+        }
+        void OnStreamRead(Object o, StreamReadEventArgs e)
+        {
+            var tmp = StreamReadEvent;
+            if (tmp != null)
+            {
+                tmp(o, e);
+            }
+        }
+
         public StreamManager()
         {
 
@@ -22,6 +40,7 @@ namespace NMPUtil.Streams
             var stream = new AsyncStream(s);
 
             _streams.Add(stream);
+            stream.ReadEvent += OnStreamRead;
 
             // async read
             stream.BeginRead();
