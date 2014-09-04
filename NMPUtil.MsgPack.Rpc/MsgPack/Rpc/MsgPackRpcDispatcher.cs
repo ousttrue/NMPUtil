@@ -74,20 +74,21 @@ namespace NMPUtil.MsgPack.Rpc
 
         public void RegisterFunc<A1, A2, R>(String key, Func<A1, A2, R> func)
         {
+            var gmi1 = MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new[] { typeof(A1) });
+            var gmi2 = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new[] { typeof(A1) });
+
             RpcCall msgpackCall = (SubMsgPackUnpacker args, UInt32 count, MsgPackPacker result) =>
             {
                 args.ParseHeadByte();
                 var a1 = default(A1);
                 if (typeof(A1).IsValueType)
                 {
-                    var gmi=MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new[] { typeof(A1) });
-                    a1 = (A1)gmi.Invoke(args, null);
+                    a1 = (A1)gmi1.Invoke(args, null);
                 }
                 else
                 {
-                    var gmi = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new[] { typeof(A1) });
                     var invokeArgs = new Object[] { Activator.CreateInstance<A1>() };
-                    gmi.Invoke(args, invokeArgs);
+                    gmi2.Invoke(args, invokeArgs);
                     a1 = (A1)invokeArgs[0];
                 }
 
