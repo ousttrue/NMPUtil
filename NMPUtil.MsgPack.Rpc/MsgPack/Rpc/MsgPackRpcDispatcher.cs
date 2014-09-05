@@ -35,8 +35,7 @@ namespace NMPUtil.MsgPack.Rpc
 
                 var id = sub.Unpack<UInt32>();
 
-                var key = String.Empty;
-                sub.Unpack(ref key);
+                var key=sub.Unpack<String>();
 
                 if (!sub.Header.IsArray)
                 {

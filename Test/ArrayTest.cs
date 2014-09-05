@@ -30,8 +30,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var a=new Object[unpacker.Header.MemberCount];
-            unpacker.Unpack(ref a);
+            var a=unpacker.Unpack<Object[]>();
 
             Assert.AreEqual(4, a.Length);
             Assert.AreEqual(0, a[0]);
@@ -55,8 +54,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var a=new List<Object>();
-            unpacker.Unpack(ref a);
+            var a=unpacker.Unpack<List<Object>>();
             for (int i = 0; i < size; ++i)
             {
                 Assert.AreEqual(i, a[i]);

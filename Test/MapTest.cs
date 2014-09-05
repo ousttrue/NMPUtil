@@ -30,8 +30,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var m=new Dictionary<dynamic, dynamic>();
-            unpacker.Unpack(ref m);
+            var m = unpacker.Unpack<Dictionary<dynamic, dynamic>>();
             var a = m.ToArray();
 
             Assert.AreEqual(2, a.Count());
@@ -61,8 +60,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var m=new Dictionary<dynamic, dynamic>();
-            unpacker.Unpack(ref m);
+            var m=unpacker.Unpack<Dictionary<dynamic, dynamic>>();
             var a = m.ToArray();
 
             Assert.AreEqual(size, a.Count());

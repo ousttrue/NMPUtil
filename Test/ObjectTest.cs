@@ -34,8 +34,7 @@ namespace UnitTest
             var unpacker = new MsgPackUnpacker(bytes);
             Assert.IsTrue(unpacker.Header.IsMap);
 
-            var dst = new Dictionary<String, Object>();
-            unpacker.Unpack(ref dst);
+            var dst=unpacker.Unpack<Dictionary<String, Object>>();
 
             Assert.AreEqual(src.Name, dst["Name"]);
             Assert.AreEqual(src.Number, dst["Number"]);

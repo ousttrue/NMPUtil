@@ -32,15 +32,13 @@ namespace UnitTest
             
             Assert.Throws<NMPUtil.NetworkEndianArraySegmentReader.NotEnoughBytesException>(() =>
                 {
-                    var o=new Object[unpacker.Header.MemberCount];
-                    unpacker.Unpack(ref o);
+                    var o=unpacker.Unpack<Object[]>();
                 }
                );
 
             unpacker=new MsgPackUnpacker(bytes);
 
-            var a=new Object[unpacker.Header.MemberCount];
-            unpacker.Unpack(ref a);
+            var a=unpacker.Unpack<Object[]>();
 
             Assert.AreEqual(4, a.Length);
             Assert.AreEqual(0, a[0]);

@@ -143,8 +143,7 @@ namespace UnitTest
             // unpack
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var newObj=new UserType();
-            unpacker.Unpack(ref newObj);
+            var newObj=unpacker.Unpack<UserType>();
 
             Assert.AreEqual(obj.Name, newObj.Name);
             Assert.AreEqual(obj.Color, newObj.Color);

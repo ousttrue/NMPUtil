@@ -124,113 +124,132 @@ namespace NMPUtil.MsgPack
             this._reader = new NetworkEndianArraySegmentReader(view);
         }
 
-        public T Unpack<T>()where T:struct
+        public T Unpack<T>()
         {
             var t = typeof(T);
-            Func<T> callback = () =>
+            if (t.IsValueType || t == typeof(String))
             {
-                switch (Header.Format)
+                Func<T> callback = () =>
                 {
-                    case MsgPackFormat.UINT8:
-                        return (T)Convert.ChangeType(_reader.ReadByte(), t);
+                    switch (Header.Format)
+                    {
+                        case MsgPackFormat.UINT8:
+                            return (T)Convert.ChangeType(_reader.ReadByte(), t);
 
-                    case MsgPackFormat.UINT16:
-                        return (T)Convert.ChangeType(_reader.ReadUInt16(), t);
+                        case MsgPackFormat.UINT16:
+                            return (T)Convert.ChangeType(_reader.ReadUInt16(), t);
 
-                    case MsgPackFormat.UINT32:
-                        return (T)Convert.ChangeType(_reader.ReadUInt32(), t);
+                        case MsgPackFormat.UINT32:
+                            return (T)Convert.ChangeType(_reader.ReadUInt32(), t);
 
-                    case MsgPackFormat.UINT64:
-                        return (T)Convert.ChangeType(_reader.ReadUInt64(), t);
+                        case MsgPackFormat.UINT64:
+                            return (T)Convert.ChangeType(_reader.ReadUInt64(), t);
 
-                    case MsgPackFormat.INT8:
-                        return (T)Convert.ChangeType(_reader.ReadSByte(), t);
+                        case MsgPackFormat.INT8:
+                            return (T)Convert.ChangeType(_reader.ReadSByte(), t);
 
-                    case MsgPackFormat.INT16:
-                        return (T)Convert.ChangeType(_reader.ReadInt16(), t);
+                        case MsgPackFormat.INT16:
+                            return (T)Convert.ChangeType(_reader.ReadInt16(), t);
 
-                    case MsgPackFormat.INT32:
-                        return (T)Convert.ChangeType(_reader.ReadInt32(), t);
+                        case MsgPackFormat.INT32:
+                            return (T)Convert.ChangeType(_reader.ReadInt32(), t);
 
-                    case MsgPackFormat.INT64:
-                        return (T)Convert.ChangeType(_reader.ReadInt64(), t);
+                        case MsgPackFormat.INT64:
+                            return (T)Convert.ChangeType(_reader.ReadInt64(), t);
 
-                    case MsgPackFormat.NIL:
-                        return (T)Convert.ChangeType(null, t);
+                        case MsgPackFormat.NIL:
+                            return (T)Convert.ChangeType(null, t);
 
-                    case MsgPackFormat.TRUE:
-                        return (T)Convert.ChangeType(true, t);
+                        case MsgPackFormat.TRUE:
+                            return (T)Convert.ChangeType(true, t);
 
-                    case MsgPackFormat.FALSE:
-                        return (T)Convert.ChangeType(false, t);
+                        case MsgPackFormat.FALSE:
+                            return (T)Convert.ChangeType(false, t);
 
-                    case MsgPackFormat.FLOAT:
-                        return (T)Convert.ChangeType(_reader.ReadSingle(), t);
+                        case MsgPackFormat.FLOAT:
+                            return (T)Convert.ChangeType(_reader.ReadSingle(), t);
 
-                    case MsgPackFormat.DOUBLE:
-                        return (T)Convert.ChangeType(_reader.ReadDouble(), t);
+                        case MsgPackFormat.DOUBLE:
+                            return (T)Convert.ChangeType(_reader.ReadDouble(), t);
 
-                    case MsgPackFormat.POSITIVE_FIXNUM:
-                        return (T)Convert.ChangeType(Header.FixNum, t);
+                        case MsgPackFormat.POSITIVE_FIXNUM:
+                            return (T)Convert.ChangeType(Header.FixNum, t);
 
-                    case MsgPackFormat.NEGATIVE_FIXNUM:
-                        return (T)Convert.ChangeType(Header.FixNum, t);
+                        case MsgPackFormat.NEGATIVE_FIXNUM:
+                            return (T)Convert.ChangeType(Header.FixNum, t);
 
-                    // str
-                    case MsgPackFormat.FIX_STR:
-                    case MsgPackFormat.STR8:
-                    case MsgPackFormat.STR16:
-                    case MsgPackFormat.STR32:
-                        {
-                            var buf = _reader.ReadBytes((Int32)Header.MemberCount);
-                            return (T)Convert.ChangeType(StrEncoding.GetString(buf.ToArray()), t);
-                        }
-
-                    // bin
-                    case MsgPackFormat.BIN8:
-                    case MsgPackFormat.BIN16:
-                    case MsgPackFormat.BIN32:
-                        {
-                            var buf = _reader.ReadBytes((Int32)Header.MemberCount);
-                            if (t == typeof(String))
+                        // str
+                        case MsgPackFormat.FIX_STR:
+                        case MsgPackFormat.STR8:
+                        case MsgPackFormat.STR16:
+                        case MsgPackFormat.STR32:
                             {
-                                return (T)Convert.ChangeType(Encoding.UTF8.GetString(buf.ToArray()), t);
+                                var buf = _reader.ReadBytes((Int32)Header.MemberCount);
+                                return (T)Convert.ChangeType(StrEncoding.GetString(buf.ToArray()), t);
                             }
-                            else if (t.IsEnum)
+
+                        // bin
+                        case MsgPackFormat.BIN8:
+                        case MsgPackFormat.BIN16:
+                        case MsgPackFormat.BIN32:
                             {
-                                String enumName = Encoding.UTF8.GetString(buf.ToArray());
-                                return (T)Enum.Parse(t, enumName);
+                                var buf = _reader.ReadBytes((Int32)Header.MemberCount);
+                                if (t == typeof(String))
+                                {
+                                    return (T)Convert.ChangeType(Encoding.UTF8.GetString(buf.ToArray()), t);
+                                }
+                                else if (t.IsEnum)
+                                {
+                                    String enumName = Encoding.UTF8.GetString(buf.ToArray());
+                                    return (T)Enum.Parse(t, enumName);
+                                }
+                                else
+                                {
+                                    return (T)(Object)buf.ToArray();
+                                }
                             }
-                            else
-                            {
-                                return (T)(Object)buf.ToArray();
-                            }   
-                        }
 
-                    // array types
-                    case MsgPackFormat.FIX_ARRAY:
-                    case MsgPackFormat.ARRAY16:
-                    case MsgPackFormat.ARRAY32:
-                        return UnpackArray<T>();
+                        // array types
+                        case MsgPackFormat.FIX_ARRAY:
+                        case MsgPackFormat.ARRAY16:
+                        case MsgPackFormat.ARRAY32:
+                            return UnpackArray<T>();
 
-                    // map types
-                    case MsgPackFormat.FIX_MAP:
-                    case MsgPackFormat.MAP16:
-                    case MsgPackFormat.MAP32:
-                        return UnpackMap<T>();
+                        // map types
+                        case MsgPackFormat.FIX_MAP:
+                        case MsgPackFormat.MAP16:
+                        case MsgPackFormat.MAP32:
+                            return UnpackMap<T>();
 
-                    default:
-                        throw new InvalidOperationException("invalid format " + Header.Format);
+                        default:
+                            throw new InvalidOperationException("invalid format " + Header.Format);
+                    }
+                };
+
+                // clear header
+                T val = callback();
+                _header = null;
+                return val;
+            }
+            else
+            {
+                if (typeof(T).IsArray)
+                {
+                    var o = (T)Activator.CreateInstance(typeof(T)
+                        , new Object[]{ (Int32)Header.MemberCount });
+                    Unpack<T>(ref o);
+                    return o;
                 }
-            };
-
-            // clear header
-            T val = callback();
-            _header = null;
-            return val;
+                else
+                {
+                    var o = (T)Activator.CreateInstance<T>();
+                    Unpack<T>(ref o);
+                    return o;
+                }
+            }
         }
 
-        public void Unpack<T>(ref T v)where T: class
+        void Unpack<T>(ref T v)
         {
             if (v == null)
             {
@@ -238,6 +257,11 @@ namespace NMPUtil.MsgPack
             }
 
             var t = typeof(T);
+            if (t.IsValueType)
+            {
+                throw new ArgumentException("v should not value type !");
+            }
+
             switch (Header.Format)
             {
                 case MsgPackFormat.UINT8:
@@ -359,23 +383,26 @@ namespace NMPUtil.MsgPack
         public delegate void UnpackerForReferenceTypeDelegate<in T>(T target, MsgPackUnpacker unpacker, UInt32 count);
         public delegate T UnpackerForValueTypeDelegate<T>(MsgPackUnpacker unpacker, UInt32 count);
 
-        #region UnpackArray
+        #region UnpackArrayCallbacks
         static Dictionary<Type, Object> _unpackArrayMapVal =
             new Dictionary<Type, Object>();
         static Dictionary<Type, Object> _unpackArrayMapRef =
             new Dictionary<Type, Object>();
 
 
-        static public void AddUnpackArray<T>(UnpackerForReferenceTypeDelegate<T> unpacker) where T : class
+        static public void AddUnpackArray<T>(UnpackerForReferenceTypeDelegate<T> unpacker)
         {
             _unpackArrayMapRef[typeof(T)]=unpacker;
         }
-        static public void AddUnpackArray<T>(UnpackerForValueTypeDelegate<T> unpacker) where T : struct
+
+        static public void AddUnpackArray<T>(UnpackerForValueTypeDelegate<T> unpacker)
         {
             _unpackArrayMapVal.Add(typeof(T), unpacker);
         }
+        #endregion
 
-        T UnpackArray<T>() where T : struct
+        #region UnpackArray
+        T UnpackArray<T>()
         {
             foreach (var kv in _unpackArrayMapVal)
             {
@@ -407,29 +434,23 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
-        static public void UnpackArrayAsArray<T>(T[] array, MsgPackUnpacker unpacker, UInt32 count) where T : class
+        static public void UnpackArrayAsArray<T>(T[] array, MsgPackUnpacker unpacker, UInt32 count)
         {
             for (int i = 0; i < count; ++i)
             {
-                if (array[i] == null)
-                {
-                    array[i] = Activator.CreateInstance<T>();
-                }
-                unpacker.Unpack(ref array[i]);
+                array[i] = unpacker.Unpack<T>();
             }
         }
 
-        static public void UnpackArrayAsList<T>(List<T> list, MsgPackUnpacker unpacker, UInt32 count) where T : class
+        static public void UnpackArrayAsList<T>(List<T> list, MsgPackUnpacker unpacker, UInt32 count)
         {
             for (int i = 0; i < count; ++i)
             {
-                var o=Activator.CreateInstance<T>();
-                unpacker.Unpack(ref o);
-                list.Add(o);
+                list.Add(unpacker.Unpack<T>());
             }
         }
 
-        void UnpackArray<T>(T t) where T : class
+        void UnpackArray<T>(T t)
         {
             foreach (var kv in _unpackArrayMapRef)
             {
@@ -478,7 +499,7 @@ namespace NMPUtil.MsgPack
         }
         #endregion
 
-        #region UnpackMap
+        #region UnpackMapCallbacks
         static Dictionary<Type, Object> _unpackMapMapVal =
             new Dictionary<Type, Object>();
         static Dictionary<Type, Object> _unpackMapMapRef =
@@ -493,29 +514,19 @@ namespace NMPUtil.MsgPack
                     var target = o as IDictionary<String, Object>;
                     for (uint i = 0; i < count; ++i)
                     {
-                        var key=String.Empty;
+                        var key=unpacker.Unpack<String>();
+
+                        if (unpacker.Header.IsArray)
                         {
-                            unpacker.Unpack(ref key);
+                            target.Add(key, unpacker.Unpack<List<Object>>());
                         }
+                        else if (unpacker.Header.IsMap)
                         {
-                            if (unpacker.Header.IsArray)
-                            {
-                                var val = new List<Object>();
-                                unpacker.Unpack(ref val);
-                                target.Add(key, val);
-                            }
-                            else if (unpacker.Header.IsMap)
-                            {
-                                var val = new Dictionary<String, Object>();
-                                unpacker.Unpack(ref val);
-                                target.Add(key, val);
-                            }
-                            else
-                            {
-                                var val = new Object();
-                                unpacker.Unpack(ref val);
-                                target.Add(key, val);
-                            }
+                            target.Add(key, unpacker.Unpack<Dictionary<String, Object>>());
+                        }
+                        else
+                        {
+                            target.Add(key, unpacker.Unpack<Object>());
                         }
                     }
                     Console.WriteLine(target);
@@ -530,30 +541,21 @@ namespace NMPUtil.MsgPack
                 {
                     for (uint i = 0; i < count; ++i)
                     {
-                        var key=String.Empty;
+                        var key=unpacker.Unpack<String>();
+
+                        if (unpacker.Header.IsArray)
                         {
-                            unpacker.Unpack(ref key);
+                            target.Add(key, unpacker.Unpack<List<Object>>());
                         }
+                        else if (unpacker.Header.IsMap)
                         {
-                            if (unpacker.Header.IsArray)
-                            {
-                                var val = new List<Object>();
-                                unpacker.Unpack(ref val);
-                                target.Add(key, val);
-                            }
-                            else if (unpacker.Header.IsMap)
-                            {
-                                var val = new Dictionary<Object, Object>();
-                                unpacker.Unpack(ref val);
-                                target.Add(key, val);
-                            }
-                            else
-                            {
-                                var val = new Object();
-                                unpacker.Unpack(ref val);
-                                target.Add(key, val);
-                            }
+                            target.Add(key, unpacker.Unpack<Dictionary<Object, Object>>());
                         }
+                        else
+                        {
+                            target.Add(key, unpacker.Unpack<Object>());
+                        }
+
                     }
                     Console.WriteLine(target);
                 }
@@ -569,45 +571,19 @@ namespace NMPUtil.MsgPack
                     var type = o.GetType();
                     for (UInt32 i = 0; i < count; ++i)
                     {
-                        String key = "";
-                        {
-                            unpacker.Unpack(ref key);
-                        }
+                        var key =unpacker.Unpack<String>();
+
                         var pi = type.GetProperty(key);
                         {
                             if (pi != null){
-                                if (pi.PropertyType.IsValueType)
-                                {
-                                    var gmi =MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new Type[] { 
-                                        pi.PropertyType
-                                    });
-                                    var v=gmi.Invoke(unpacker, new Object[] { });
-                                    pi.SetValue(o, v, null);
-                                }
-                                else
-                                {
-                                    var v = pi.GetValue(o);
-                                    if (v == null)
-                                    {
-                                        if (pi.PropertyType == typeof(String))
-                                        {
-                                            v = String.Empty;
-                                        }
-                                        else
-                                        {
-                                            v = Activator.CreateInstance(pi.PropertyType);
-                                        }
-                                    }
-
-                                    var gmi = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new Type[] { pi.PropertyType });
-                                    var args = new Object[] { v };
-                                    gmi.Invoke(unpacker, args);
-                                    pi.SetValue(o, args[0], null);
-                                }
+                                var gmi =MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new Type[] { 
+                                    pi.PropertyType
+                                });
+                                var v=gmi.Invoke(unpacker, null);
+                                pi.SetValue(o, v, null);
                             }
                             else{
-                                var v=new Object();
-                                unpacker.Unpack(ref v);
+                                var v=unpacker.Unpack<Object>();
                             }
                         }
                     }
@@ -615,16 +591,18 @@ namespace NMPUtil.MsgPack
                 )
            }
         };
-        static public void AddUnpackMap<T>(UnpackerForReferenceTypeDelegate<T> unpacker)where T: class
+        static public void AddUnpackMap<T>(UnpackerForReferenceTypeDelegate<T> unpacker)
         {
             _unpackMapMapRef.Add(typeof(T), unpacker);
         }
-        static public void AddUnpackMap<T>(UnpackerForValueTypeDelegate<T> unpacker) where T : struct
+        static public void AddUnpackMap<T>(UnpackerForValueTypeDelegate<T> unpacker)
         {
             _unpackMapMapVal.Add(typeof(T), unpacker);
         }
+        #endregion
 
-        T UnpackMap<T>() where T : struct
+        #region UnpackMap
+        T UnpackMap<T>()
         {
             foreach (var kv in _unpackMapMapVal)
             {
@@ -642,7 +620,7 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
-        void UnpackMap<T>(T t) where T : class
+        void UnpackMap<T>(T t)
         {
             foreach (var kv in _unpackMapMapRef)
             {

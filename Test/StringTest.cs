@@ -21,8 +21,7 @@ namespace UnitTest
             var bytes = ms.ToArray();
 
             var unpacker = new MsgPackUnpacker(bytes);
-            var v="";
-            unpacker.Unpack(ref v);
+            var v=unpacker.Unpack<String>();
 
             Assert.AreEqual("文字列", v);
         }

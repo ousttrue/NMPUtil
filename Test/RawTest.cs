@@ -22,8 +22,7 @@ namespace UnitTest
             var bytes = ms.ToArray();
 
             var unpacker = new MsgPackUnpacker(bytes);
-            var v=new Byte[unpacker.Header.MemberCount];
-            unpacker.Unpack(ref v);
+            var v=unpacker.Unpack<Byte[]>();
 
             Assert.AreEqual(src, v);
         }
@@ -42,8 +41,7 @@ namespace UnitTest
             var bytes = ms.ToArray();
 
             var unpacker = new MsgPackUnpacker(bytes);
-            var v=new Byte[unpacker.Header.MemberCount];
-            unpacker.Unpack(ref v);
+            var v=unpacker.Unpack<Byte[]>();
 
             Assert.AreEqual(src.ToArray(), v);
         }
