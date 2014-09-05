@@ -76,6 +76,22 @@ namespace NMPUtil.MsgPack
             }
         }
 
+        public SByte FixNum
+        {
+            get
+            {
+                switch (Format)
+                {
+                    case MsgPackFormat.POSITIVE_FIXNUM:
+                    case MsgPackFormat.NEGATIVE_FIXNUM:
+                        return (SByte)HeadByte;
+
+                    default:
+                        throw new InvalidOperationException();
+                }
+            }
+        }
+
         public MsgPackHeader(NetworkEndianArraySegmentReader reader)
         {
             this.HeadByte = reader.ReadByte();

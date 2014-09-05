@@ -171,16 +171,10 @@ namespace NMPUtil.MsgPack
                         return (T)Convert.ChangeType(_reader.ReadDouble(), t);
 
                     case MsgPackFormat.POSITIVE_FIXNUM:
-                        {
-                            var o = Header.HeadByte;
-                            return (T)Convert.ChangeType(o, t);
-                        }
+                        return (T)Convert.ChangeType(Header.FixNum, t);
 
                     case MsgPackFormat.NEGATIVE_FIXNUM:
-                        {
-                            var o = (SByte)((Header.HeadByte & MsgPackFormat.NEGATIVE_FIXNUM.InvMask()) - 32);
-                            return (T)Convert.ChangeType(o, t);
-                        }
+                        return (T)Convert.ChangeType(Header.FixNum, t);
 
                     // str
                     case MsgPackFormat.FIX_STR:
@@ -209,16 +203,8 @@ namespace NMPUtil.MsgPack
                             }
                             else
                             {
-                                if (t == typeof(Object))
-                                {
-                                    // fail safe
-                                    return (T)(Object)buf.ToArray();
-                                }
-                                else
-                                {
-                                    return (T)Convert.ChangeType(buf.ToArray(), t);
-                                }
-                            }
+                                return (T)(Object)buf.ToArray();
+                            }   
                         }
 
                     // array types
@@ -246,6 +232,11 @@ namespace NMPUtil.MsgPack
 
         public void Unpack<T>(ref T v)where T: class
         {
+            if (v == null)
+            {
+                throw new ArgumentNullException("v");
+            }
+
             var t = typeof(T);
             switch (Header.Format)
             {
@@ -302,17 +293,11 @@ namespace NMPUtil.MsgPack
                     break;
 
                 case MsgPackFormat.POSITIVE_FIXNUM:
-                    {
-                        var o = Header.HeadByte;
-                        v = (T)Convert.ChangeType(o, t);
-                    }
+                    v = (T)Convert.ChangeType(Header.FixNum, t);
                     break;
 
                 case MsgPackFormat.NEGATIVE_FIXNUM:
-                    {
-                        var o = (SByte)((Header.HeadByte & MsgPackFormat.NEGATIVE_FIXNUM.InvMask()) - 32);
-                        v = (T)Convert.ChangeType(o, t);
-                    }
+                    v = (T)Convert.ChangeType(Header.FixNum, t);
                     break;
 
                 // str
@@ -343,15 +328,7 @@ namespace NMPUtil.MsgPack
                         }
                         else
                         {
-                            if (t == typeof(Object))
-                            {
-                                // fail safe
-                                v = (T)(Object)buf.ToArray();
-                            }
-                            else
-                            {
-                                v = (T)Convert.ChangeType(buf.ToArray(), t);
-                            }
+                            v = (T)(Object)buf.ToArray();
                         }
                     }
                     break;
