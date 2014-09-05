@@ -9,191 +9,22 @@ using System.Threading.Tasks;
 
 namespace NMPUtil.MsgPack
 {
-    public partial class MsgPackUnpacker
+    public partial class MsgPackUnpacker: IDisposable
     {
-        #region read
-        public class NotEnoughBytesException : InvalidOperationException
-        {
-            public NotEnoughBytesException()
-            {
-            }
+        NetworkEndianArraySegmentReader _reader;
 
-            public NotEnoughBytesException(string message)
-                : base(message)
-            {
-            }
-
-            public NotEnoughBytesException(string message, Exception inner)
-                : base(message, inner)
-            {
-            }
-        }
-
-        ArraySegment<Byte> _view;
-        public Int32 Pos
-        {
-            get;
-            private set;
-        }
-        public void Advance(Int32 d)
-        {
-            Pos = Pos + d;
-        }
-
-        public ArraySegment<Byte> GetRemain()
-        {
-            return new ArraySegment<byte>(_view.Array, _view.Offset + Pos, _view.Count - Pos);
-        }
-
-        public SubMsgPackUnpacker GetSubUnpacker()
-        {
-            return new SubMsgPackUnpacker(GetRemain(), this);
-        }
-
-        public Byte HeadByte
-        {
-            get;
-            private set;
-        }
-
-        IEnumerable<Byte> ReadBytes(Int32 size)
-        {
-            if(Pos+size>_view.Count){
-                throw new NotEnoughBytesException("ReadBytes "+size);
-            }
-            var b = _view.Skip(Pos).Take(size);
-            Advance(size);
-            return b;
-        }
-
-        SByte ReadSByte()
-        {
-            return (SByte)ReadBytes(1).First();
-        }
-
-        Int16 ReadInt16()
-        {
-            return IPAddress.NetworkToHostOrder(
-                BitConverter.ToInt16(ReadBytes(2).ToArray(), 0));
-        }
-
-        Int32 ReadInt32()
-        {
-            return IPAddress.NetworkToHostOrder(
-                BitConverter.ToInt32(ReadBytes(4).ToArray(), 0));
-        }
-
-        Int64 ReadInt64()
-        {
-            return IPAddress.NetworkToHostOrder(
-                BitConverter.ToInt64(ReadBytes(8).ToArray(), 0));
-        }
-
-        Byte ReadByte()
-        {
-            return ReadBytes(1).First();
-        }
-
-        UInt16 ReadUInt16()
-        {
-            return (UInt16)ReadInt16();
-        }
-
-        UInt32 ReadUInt32()
-        {
-            return (UInt32)ReadInt32();
-        }
-
-        UInt64 ReadUInt64()
-        {
-            return (UInt64)ReadInt64();
-        }
-
-        Single ReadSingle()
-        {
-            var b = ReadBytes(4);
-            if (BitConverter.IsLittleEndian)
-            {
-                b = b.Reverse();
-            }
-            return BitConverter.ToSingle(b.ToArray(), 0);
-        }
-
-        Double ReadDouble()
-        {
-            var b = ReadBytes(8);
-            if (BitConverter.IsLittleEndian)
-            {
-                b = b.Reverse();
-            }
-            return BitConverter.ToDouble(b.ToArray(), 0);
-        }
-
-        #endregion
-
-        #region format
-        public MsgPackFormat Format
-        {
-            get;
-            private set;
-        }
-
-        public Boolean IsNil
+        MsgPackHeader _header;
+        public MsgPackHeader Header
         {
             get
             {
-                return Format == MsgPackFormat.NIL;
-            }
-        }
-
-        public Boolean IsArray
-        {
-            get
-            {
-                switch (Format)
+                if (_header == null)
                 {
-                    case MsgPackFormat.FIX_ARRAY:
-                    case MsgPackFormat.ARRAY16:
-                    case MsgPackFormat.ARRAY32:
-                        return true;
-
-                    default:
-                        return false;
+                    _header = new MsgPackHeader(_reader);
                 }
+                return _header;
             }
         }
-
-        public Boolean IsMap
-        {
-            get
-            {
-                switch (Format)
-                {
-                    case MsgPackFormat.FIX_MAP:
-                    case MsgPackFormat.MAP16:
-                    case MsgPackFormat.MAP32:
-                        return true;
-
-                    default:
-                        return false;
-                }
-            }
-        }
-
-        // for array / map / str / bin
-        UInt32 _memberCount;
-        public UInt32 MemberCount
-        {
-            get
-            {
-                return _memberCount;
-            }
-            private set
-            {
-                _memberCount = value;
-            }
-        }
-        #endregion
 
         public Encoding StrEncoding
         {
@@ -201,309 +32,253 @@ namespace NMPUtil.MsgPack
             set;
         }
 
+        static MethodInfo _genericReferenceUnpacker;
         static public MethodInfo GenericReferenceUnpacker
         {
-            get;
-            private set;
-        }
-
-        static public MethodInfo GenericValueUnpacker
-        {
-            get;
-            private set;
-        }
-
-        public MsgPackUnpacker(IEnumerable<Byte> bytes, bool doParseHeadByte=true)
-            : this(new ArraySegment<Byte>(bytes.ToArray()), doParseHeadByte)
-        {}
-
-        public MsgPackUnpacker(Byte[] bytes, bool doParseHeadByte = true)
-            : this(new ArraySegment<Byte>(bytes), doParseHeadByte)
-        {}
-
-        public MsgPackUnpacker(ArraySegment<Byte> view, bool doParseHeadByte = true)
-        {
-            this.StrEncoding = Encoding.UTF8;
-            this._view = view;
-
-            if (doParseHeadByte)
+            get
             {
-                ParseHeadByte();
-            }
-
-            if (GenericReferenceUnpacker == null)
-            {
-                foreach (var mi in GetType().GetMethods().Where(mi => mi.Name == "Unpack"))
+                if (_genericReferenceUnpacker == null)
                 {
-                    if (mi.ReturnType == typeof(void))
+                    foreach (var mi in typeof(MsgPackUnpacker).GetMethods().Where(mi => mi.Name == "Unpack"))
                     {
-                        GenericReferenceUnpacker = mi;
-                    }
-                    else
-                    {
-                        GenericValueUnpacker = mi;
+                        if (mi.ReturnType == typeof(void))
+                        {
+                            _genericReferenceUnpacker = mi;
+                        }
                     }
                 }
+                return _genericReferenceUnpacker;
             }
         }
 
-        public MsgPackFormat ParseHeadByte()
+        static MethodInfo _genericValueUnpacker;
+        static public MethodInfo GenericValueUnpacker
         {
-            HeadByte = ReadByte();
-
-            var t = (MsgPackFormat)HeadByte;
-            switch (t)
+            get
             {
-                case MsgPackFormat.UINT8:
-                case MsgPackFormat.UINT16:
-                case MsgPackFormat.UINT32:
-                case MsgPackFormat.UINT64:
-                case MsgPackFormat.INT8:
-                case MsgPackFormat.INT16:
-                case MsgPackFormat.INT32:
-                case MsgPackFormat.INT64:
-                case MsgPackFormat.NIL:
-                case MsgPackFormat.TRUE:
-                case MsgPackFormat.FALSE:
-                case MsgPackFormat.FLOAT:
-                case MsgPackFormat.DOUBLE:
-                    Format = t;
-                    break;
-
-                case MsgPackFormat.BIN8:
-                    Format = t;
-                    MemberCount = ReadByte();
-                    break;
-
-                case MsgPackFormat.BIN16:
-                    Format = t;
-                    MemberCount = ReadUInt16();
-                    break;
-
-                case MsgPackFormat.BIN32:
-                    Format = t;
-                    MemberCount = ReadUInt32();
-                    break;
-
-                case MsgPackFormat.STR8:
-                    Format = t;
-                    MemberCount = ReadByte();
-                    break;
-
-                case MsgPackFormat.STR16:
-                    Format = t;
-                    MemberCount = ReadUInt16();
-                    break;
-
-                case MsgPackFormat.STR32:
-                    Format = t;
-                    MemberCount = ReadUInt32();
-                    break;
-
-                case MsgPackFormat.ARRAY16:
-                    Format = t;
-                    MemberCount = ReadUInt16();
-                    break;
-
-                case MsgPackFormat.ARRAY32:
-                    Format = t;
-                    MemberCount = ReadUInt32();
-                    break;
-
-                case MsgPackFormat.MAP16:
-                    Format = t;
-                    MemberCount = ReadUInt16();
-                    break;
-
-                case MsgPackFormat.MAP32:
-                    Format = t;
-                    MemberCount = ReadUInt32();
-                    break;
-
-                default:
+                if (_genericValueUnpacker==null)
+                {
+                    foreach (var mi in typeof(MsgPackUnpacker).GetMethods().Where(mi => mi.Name == "Unpack"))
                     {
+                        if (mi.ReturnType == typeof(void))
+                        {
 
-                        if (HeadByte < MsgPackFormat.FIX_MAP.Mask())
-                        {
-                            Format = MsgPackFormat.POSITIVE_FIXNUM;
-                        }
-                        else if (HeadByte < MsgPackFormat.FIX_ARRAY.Mask())
-                        {
-                            Format = MsgPackFormat.FIX_MAP;
-                            MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
-                        }
-                        else if (HeadByte < MsgPackFormat.FIX_STR.Mask())
-                        {
-                            Format = MsgPackFormat.FIX_ARRAY;
-                            MemberCount = (UInt32)(HeadByte & Convert.ToByte("00001111", 2));
-                        }
-                        else if (HeadByte < MsgPackFormat.NIL.Mask())
-                        {
-                            Format = MsgPackFormat.FIX_STR;
-                            MemberCount = (UInt32)(HeadByte & Convert.ToByte("00011111", 2));
-                        }
-                        else if (HeadByte >= MsgPackFormat.NEGATIVE_FIXNUM.Mask())
-                        {
-                            Format = MsgPackFormat.NEGATIVE_FIXNUM;
                         }
                         else
                         {
-                            throw new InvalidOperationException("unknown HeadByte " + HeadByte);
+                            _genericValueUnpacker = mi;
                         }
-                        break;
                     }
+                }
+                return _genericValueUnpacker;
+            }
+        }
+
+        public MsgPackUnpacker(IEnumerable<Byte> bytes, MsgPackUnpacker parent=null)
+            : this(new ArraySegment<Byte>(bytes.ToArray()))
+        {}
+
+        public MsgPackUnpacker(Byte[] bytes, MsgPackUnpacker parent=null)
+            : this(new ArraySegment<Byte>(bytes))
+        {}
+
+        MsgPackUnpacker _parent;
+        public MsgPackUnpacker GetSubUnpacker()
+        {
+            return new MsgPackUnpacker(_reader.GetRemain(), this);
+        }
+
+        // Flag: Has Dispose already been called?
+        bool disposed = false;
+
+        // Public implementation of Dispose pattern callable by consumers.
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        // Protected implementation of Dispose pattern.
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            if (disposing)
+            {
+                if (_parent != null)
+                {
+                    this._parent._reader.Advance(_reader.Pos);
+                }
             }
 
-            return Format;
+            // Free any unmanaged objects here.
+            //
+            disposed = true;
+        }
+
+        public MsgPackUnpacker(ArraySegment<Byte> view, MsgPackUnpacker parent=null)
+        {
+            this.StrEncoding = Encoding.UTF8;
+            this._parent = parent;
+            this._reader = new NetworkEndianArraySegmentReader(view);
         }
 
         public T Unpack<T>()where T:struct
         {
             var t = typeof(T);
-            switch (Format)
+            Func<T> callback = () =>
             {
-                case MsgPackFormat.UINT8:
-                    return (T)Convert.ChangeType(ReadByte(), t);
+                switch (Header.Format)
+                {
+                    case MsgPackFormat.UINT8:
+                        return (T)Convert.ChangeType(_reader.ReadByte(), t);
 
-                case MsgPackFormat.UINT16:
-                    return (T)Convert.ChangeType(ReadUInt16(), t);
+                    case MsgPackFormat.UINT16:
+                        return (T)Convert.ChangeType(_reader.ReadUInt16(), t);
 
-                case MsgPackFormat.UINT32:
-                    return (T)Convert.ChangeType(ReadUInt32(), t);
+                    case MsgPackFormat.UINT32:
+                        return (T)Convert.ChangeType(_reader.ReadUInt32(), t);
 
-                case MsgPackFormat.UINT64:
-                    return (T)Convert.ChangeType(ReadUInt64(), t);
+                    case MsgPackFormat.UINT64:
+                        return (T)Convert.ChangeType(_reader.ReadUInt64(), t);
 
-                case MsgPackFormat.INT8:
-                    return (T)Convert.ChangeType(ReadSByte(), t);
+                    case MsgPackFormat.INT8:
+                        return (T)Convert.ChangeType(_reader.ReadSByte(), t);
 
-                case MsgPackFormat.INT16:
-                    return (T)Convert.ChangeType(ReadInt16(), t);
+                    case MsgPackFormat.INT16:
+                        return (T)Convert.ChangeType(_reader.ReadInt16(), t);
 
-                case MsgPackFormat.INT32:
-                    return (T)Convert.ChangeType(ReadInt32(), t);
-                    
-                case MsgPackFormat.INT64:
-                    return (T)Convert.ChangeType(ReadInt64(), t);
+                    case MsgPackFormat.INT32:
+                        return (T)Convert.ChangeType(_reader.ReadInt32(), t);
 
-                case MsgPackFormat.NIL:
-                    return (T)Convert.ChangeType(null, t);
+                    case MsgPackFormat.INT64:
+                        return (T)Convert.ChangeType(_reader.ReadInt64(), t);
 
-                case MsgPackFormat.TRUE:
-                    return (T)Convert.ChangeType(true, t);
+                    case MsgPackFormat.NIL:
+                        return (T)Convert.ChangeType(null, t);
 
-                case MsgPackFormat.FALSE:
-                    return (T)Convert.ChangeType(false, t);
+                    case MsgPackFormat.TRUE:
+                        return (T)Convert.ChangeType(true, t);
 
-                case MsgPackFormat.FLOAT:
-                    return (T)Convert.ChangeType(ReadSingle(), t);
+                    case MsgPackFormat.FALSE:
+                        return (T)Convert.ChangeType(false, t);
 
-                case MsgPackFormat.DOUBLE:
-                    return (T)Convert.ChangeType(ReadDouble(), t);
+                    case MsgPackFormat.FLOAT:
+                        return (T)Convert.ChangeType(_reader.ReadSingle(), t);
 
-                case MsgPackFormat.POSITIVE_FIXNUM:
-                    {
-                        var o = HeadByte;
-                        return (T)Convert.ChangeType(o, t);
-                    }
+                    case MsgPackFormat.DOUBLE:
+                        return (T)Convert.ChangeType(_reader.ReadDouble(), t);
 
-                case MsgPackFormat.NEGATIVE_FIXNUM:
-                    {
-                        var o = (SByte)((HeadByte & MsgPackFormat.NEGATIVE_FIXNUM.InvMask()) - 32);
-                        return (T)Convert.ChangeType(o, t);
-                    }
-
-                // str
-                case MsgPackFormat.FIX_STR:
-                case MsgPackFormat.STR8:
-                case MsgPackFormat.STR16:
-                case MsgPackFormat.STR32:
-                    {
-                        var buf = ReadBytes((Int32)MemberCount);
-                        return (T)Convert.ChangeType(StrEncoding.GetString(buf.ToArray()), t);
-                    }
-
-                // bin
-                case MsgPackFormat.BIN8:
-                case MsgPackFormat.BIN16:
-                case MsgPackFormat.BIN32:
-                    {
-                        var buf = ReadBytes((Int32)MemberCount);
-                        if (t == typeof(String))
+                    case MsgPackFormat.POSITIVE_FIXNUM:
                         {
-                            return (T)Convert.ChangeType(Encoding.UTF8.GetString(buf.ToArray()), t);
+                            var o = Header.HeadByte;
+                            return (T)Convert.ChangeType(o, t);
                         }
-                        else if (t.IsEnum)
+
+                    case MsgPackFormat.NEGATIVE_FIXNUM:
                         {
-                            String enumName = Encoding.UTF8.GetString(buf.ToArray());
-                            return (T)Enum.Parse(t, enumName);
+                            var o = (SByte)((Header.HeadByte & MsgPackFormat.NEGATIVE_FIXNUM.InvMask()) - 32);
+                            return (T)Convert.ChangeType(o, t);
                         }
-                        else
+
+                    // str
+                    case MsgPackFormat.FIX_STR:
+                    case MsgPackFormat.STR8:
+                    case MsgPackFormat.STR16:
+                    case MsgPackFormat.STR32:
                         {
-                            if (t == typeof(Object))
+                            var buf = _reader.ReadBytes((Int32)Header.MemberCount);
+                            return (T)Convert.ChangeType(StrEncoding.GetString(buf.ToArray()), t);
+                        }
+
+                    // bin
+                    case MsgPackFormat.BIN8:
+                    case MsgPackFormat.BIN16:
+                    case MsgPackFormat.BIN32:
+                        {
+                            var buf = _reader.ReadBytes((Int32)Header.MemberCount);
+                            if (t == typeof(String))
                             {
-                                // fail safe
-                                return (T)(Object)buf.ToArray();
+                                return (T)Convert.ChangeType(Encoding.UTF8.GetString(buf.ToArray()), t);
+                            }
+                            else if (t.IsEnum)
+                            {
+                                String enumName = Encoding.UTF8.GetString(buf.ToArray());
+                                return (T)Enum.Parse(t, enumName);
                             }
                             else
                             {
-                                return (T)Convert.ChangeType(buf.ToArray(), t);
+                                if (t == typeof(Object))
+                                {
+                                    // fail safe
+                                    return (T)(Object)buf.ToArray();
+                                }
+                                else
+                                {
+                                    return (T)Convert.ChangeType(buf.ToArray(), t);
+                                }
                             }
                         }
-                    }
 
-                // array types
-                case MsgPackFormat.FIX_ARRAY:
-                case MsgPackFormat.ARRAY16:
-                case MsgPackFormat.ARRAY32:
-                    return UnpackArray<T>();
+                    // array types
+                    case MsgPackFormat.FIX_ARRAY:
+                    case MsgPackFormat.ARRAY16:
+                    case MsgPackFormat.ARRAY32:
+                        return UnpackArray<T>();
 
-                // map types
-                case MsgPackFormat.FIX_MAP:
-                case MsgPackFormat.MAP16:
-                case MsgPackFormat.MAP32:
-                    return UnpackMap<T>();
+                    // map types
+                    case MsgPackFormat.FIX_MAP:
+                    case MsgPackFormat.MAP16:
+                    case MsgPackFormat.MAP32:
+                        return UnpackMap<T>();
 
-                default:
-                    throw new InvalidOperationException("invalid format "+Format);
-            }
+                    default:
+                        throw new InvalidOperationException("invalid format " + Header.Format);
+                }
+            };
+
+            // clear header
+            T val = callback();
+            _header = null;
+            return val;
         }
 
         public void Unpack<T>(ref T v)where T: class
         {
             var t = typeof(T);
-            switch (Format)
+            switch (Header.Format)
             {
                 case MsgPackFormat.UINT8:
-                    v = (T)Convert.ChangeType(ReadByte(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadByte(), t);
                     break;
 
                 case MsgPackFormat.UINT16:
-                    v = (T)Convert.ChangeType(ReadUInt16(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadUInt16(), t);
                     break;
 
                 case MsgPackFormat.UINT32:
-                    v = (T)Convert.ChangeType(ReadUInt32(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadUInt32(), t);
                     break;
 
                 case MsgPackFormat.UINT64:
-                    v = (T)Convert.ChangeType(ReadUInt64(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadUInt64(), t);
                     break;
 
                 case MsgPackFormat.INT8:
-                    v = (T)Convert.ChangeType(ReadSByte(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadSByte(), t);
                     break;
 
                 case MsgPackFormat.INT16:
-                    v = (T)Convert.ChangeType(ReadInt16(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadInt16(), t);
                     break;
 
                 case MsgPackFormat.INT32:
-                    v = (T)Convert.ChangeType(ReadInt32(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadInt32(), t);
                     break;
 
                 case MsgPackFormat.INT64:
-                    v = (T)Convert.ChangeType(ReadInt64(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadInt64(), t);
                     break;
 
                 case MsgPackFormat.NIL:
@@ -519,23 +294,23 @@ namespace NMPUtil.MsgPack
                     break;
 
                 case MsgPackFormat.FLOAT:
-                    v = (T)Convert.ChangeType(ReadSingle(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadSingle(), t);
                     break;
 
                 case MsgPackFormat.DOUBLE:
-                    v = (T)Convert.ChangeType(ReadDouble(), t);
+                    v = (T)Convert.ChangeType(_reader.ReadDouble(), t);
                     break;
 
                 case MsgPackFormat.POSITIVE_FIXNUM:
                     {
-                        var o = HeadByte;
+                        var o = Header.HeadByte;
                         v = (T)Convert.ChangeType(o, t);
                     }
                     break;
 
                 case MsgPackFormat.NEGATIVE_FIXNUM:
                     {
-                        var o = (SByte)((HeadByte & MsgPackFormat.NEGATIVE_FIXNUM.InvMask()) - 32);
+                        var o = (SByte)((Header.HeadByte & MsgPackFormat.NEGATIVE_FIXNUM.InvMask()) - 32);
                         v = (T)Convert.ChangeType(o, t);
                     }
                     break;
@@ -546,7 +321,7 @@ namespace NMPUtil.MsgPack
                 case MsgPackFormat.STR16:
                 case MsgPackFormat.STR32:
                     {
-                        var buf = ReadBytes((Int32)MemberCount);
+                        var buf = _reader.ReadBytes((Int32)Header.MemberCount);
                         v = (T)Convert.ChangeType(StrEncoding.GetString(buf.ToArray()), t);
                     }
                     break;
@@ -556,7 +331,7 @@ namespace NMPUtil.MsgPack
                 case MsgPackFormat.BIN16:
                 case MsgPackFormat.BIN32:
                     {
-                        var buf = ReadBytes((Int32)MemberCount);
+                        var buf = _reader.ReadBytes((Int32)Header.MemberCount);
                         if (t == typeof(String))
                         {
                             v = (T)Convert.ChangeType(Encoding.UTF8.GetString(buf.ToArray()), t);
@@ -596,13 +371,16 @@ namespace NMPUtil.MsgPack
                     break;
 
                 default:
-                    throw new InvalidOperationException("invalid format "+Format);
+                    throw new InvalidOperationException("invalid format "+Header.Format);
             }
+
+            // clear header
+            _header = null;
         }
 
 
-        public delegate void UnpackerForReferenceTypeDelegate<in T>(T target, SubMsgPackUnpacker unpacker, UInt32 count);
-        public delegate T UnpackerForValueTypeDelegate<T>(SubMsgPackUnpacker unpacker, UInt32 count);
+        public delegate void UnpackerForReferenceTypeDelegate<in T>(T target, MsgPackUnpacker unpacker, UInt32 count);
+        public delegate T UnpackerForValueTypeDelegate<T>(MsgPackUnpacker unpacker, UInt32 count);
 
         #region UnpackArray
         static Dictionary<Type, Object> _unpackArrayMapVal =
@@ -629,7 +407,7 @@ namespace NMPUtil.MsgPack
                     var handler = (UnpackerForValueTypeDelegate<T>)kv.Value;
                     using (var sub = GetSubUnpacker())
                     {
-                        return handler(sub, MemberCount);
+                        return handler(sub, Header.MemberCount);
                     }
                 }
             }
@@ -642,7 +420,7 @@ namespace NMPUtil.MsgPack
                     var handler = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
                     using (var sub = GetSubUnpacker())
                     {
-                        var t = handler(sub, MemberCount);
+                        var t = handler(sub, Header.MemberCount);
                         AddUnpackArray<T>(handler);
                         return t;
                     }
@@ -652,11 +430,10 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException("no handler for "+typeof(T));
         }
 
-        static public void UnpackArrayAsArray<T>(T[] array, SubMsgPackUnpacker unpacker, UInt32 count) where T : class
+        static public void UnpackArrayAsArray<T>(T[] array, MsgPackUnpacker unpacker, UInt32 count) where T : class
         {
             for (int i = 0; i < count; ++i)
             {
-                unpacker.ParseHeadByte();
                 if (array[i] == null)
                 {
                     array[i] = Activator.CreateInstance<T>();
@@ -665,11 +442,10 @@ namespace NMPUtil.MsgPack
             }
         }
 
-        static public void UnpackArrayAsList<T>(List<T> list, SubMsgPackUnpacker unpacker, UInt32 count) where T : class
+        static public void UnpackArrayAsList<T>(List<T> list, MsgPackUnpacker unpacker, UInt32 count) where T : class
         {
             for (int i = 0; i < count; ++i)
             {
-                unpacker.ParseHeadByte();
                 var o=Activator.CreateInstance<T>();
                 unpacker.Unpack(ref o);
                 list.Add(o);
@@ -685,7 +461,7 @@ namespace NMPUtil.MsgPack
                     using (var sub = GetSubUnpacker())
                     {
                         var handler = (UnpackerForReferenceTypeDelegate<T>)kv.Value;
-                        handler(t, sub, MemberCount);
+                        handler(t, sub, Header.MemberCount);
                         return;
                     }
                 }
@@ -700,7 +476,7 @@ namespace NMPUtil.MsgPack
 
                 using (var sub = GetSubUnpacker())
                 {
-                    handler(t, sub, MemberCount);
+                    handler(t, sub, Header.MemberCount);
                     AddUnpackArray<T>(handler);
                     return;
                 }
@@ -715,7 +491,7 @@ namespace NMPUtil.MsgPack
 
                 using (var sub = GetSubUnpacker())
                 {
-                    handler(t, sub, MemberCount);
+                    handler(t, sub, Header.MemberCount);
                     AddUnpackArray<T>(handler);
                     return;
                 }
@@ -734,7 +510,7 @@ namespace NMPUtil.MsgPack
             {
                 typeof(IDictionary<String, Object>)
                 , (Object)(UnpackerForReferenceTypeDelegate<IDictionary<String, Object>>)(
-                (IDictionary<String, Object> o, SubMsgPackUnpacker unpacker, UInt32 count)=>
+                (IDictionary<String, Object> o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var target = o as IDictionary<String, Object>;
@@ -742,18 +518,16 @@ namespace NMPUtil.MsgPack
                     {
                         var key=String.Empty;
                         {
-                            unpacker.ParseHeadByte();
                             unpacker.Unpack(ref key);
                         }
                         {
-                            unpacker.ParseHeadByte();
-                            if (unpacker.IsArray)
+                            if (unpacker.Header.IsArray)
                             {
                                 var val = new List<Object>();
                                 unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
-                            else if (unpacker.IsMap)
+                            else if (unpacker.Header.IsMap)
                             {
                                 var val = new Dictionary<String, Object>();
                                 unpacker.Unpack(ref val);
@@ -774,25 +548,23 @@ namespace NMPUtil.MsgPack
             , {
                 typeof(IDictionary<Object, Object>)
                 , (Object)(UnpackerForReferenceTypeDelegate<IDictionary<Object, Object>>)(
-                (IDictionary<Object, Object> target, SubMsgPackUnpacker unpacker, UInt32 count)=>
+                (IDictionary<Object, Object> target, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     for (uint i = 0; i < count; ++i)
                     {
                         var key=String.Empty;
                         {
-                            unpacker.ParseHeadByte();
                             unpacker.Unpack(ref key);
                         }
                         {
-                            unpacker.ParseHeadByte();
-                            if (unpacker.IsArray)
+                            if (unpacker.Header.IsArray)
                             {
                                 var val = new List<Object>();
                                 unpacker.Unpack(ref val);
                                 target.Add(key, val);
                             }
-                            else if (unpacker.IsMap)
+                            else if (unpacker.Header.IsMap)
                             {
                                 var val = new Dictionary<Object, Object>();
                                 unpacker.Unpack(ref val);
@@ -814,7 +586,7 @@ namespace NMPUtil.MsgPack
             , {
                   typeof(Object)
                 , (Object)(UnpackerForReferenceTypeDelegate<Object>)( 
-                (Object o, SubMsgPackUnpacker unpacker, UInt32 count)=>
+                (Object o, MsgPackUnpacker unpacker, UInt32 count)=>
 
                 {
                     var type = o.GetType();
@@ -822,16 +594,16 @@ namespace NMPUtil.MsgPack
                     {
                         String key = "";
                         {
-                            unpacker.ParseHeadByte();
                             unpacker.Unpack(ref key);
                         }
                         var pi = type.GetProperty(key);
                         {
-                            unpacker.ParseHeadByte();
                             if (pi != null){
                                 if (pi.PropertyType.IsValueType)
                                 {
-                                    var gmi =MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new Type[] { pi.PropertyType });
+                                    var gmi =MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new Type[] { 
+                                        pi.PropertyType
+                                    });
                                     var v=gmi.Invoke(unpacker, new Object[] { });
                                     pi.SetValue(o, v, null);
                                 }
@@ -884,7 +656,7 @@ namespace NMPUtil.MsgPack
                     var handler= (UnpackerForValueTypeDelegate<T>)kv.Value;
                     using (var sub = GetSubUnpacker())
                     {
-                        return handler(sub, MemberCount);
+                        return handler(sub, Header.MemberCount);
                     }
                 }
             }
@@ -902,7 +674,7 @@ namespace NMPUtil.MsgPack
                     var unpackMap = (UnpackerForReferenceTypeDelegate<T>)kv.Value;
                     using (var sub = GetSubUnpacker())
                     {
-                        unpackMap(t, sub, MemberCount);
+                        unpackMap(t, sub, Header.MemberCount);
                     }
                     return;
                 }
@@ -911,42 +683,5 @@ namespace NMPUtil.MsgPack
             throw new InvalidOperationException("no handler for "+typeof(T));
         }
         #endregion
-    }
-
-
-    public class SubMsgPackUnpacker : MsgPackUnpacker, IDisposable
-    {
-        MsgPackUnpacker _parent;
-
-        public SubMsgPackUnpacker(ArraySegment<Byte> view, MsgPackUnpacker parent):base(view, false)
-        {
-            this._parent = parent;
-        }
-
-        // Flag: Has Dispose already been called?
-        bool disposed = false;
-
-        // Public implementation of Dispose pattern callable by consumers.
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        // Protected implementation of Dispose pattern.
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-                return;
-
-            if (disposing)
-            {
-                this._parent.Advance(Pos);
-            }
-
-            // Free any unmanaged objects here.
-            //
-            disposed = true;
-        }
     }
 }

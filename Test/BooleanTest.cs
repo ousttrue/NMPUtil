@@ -23,7 +23,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            Assert.IsTrue(unpacker.IsNil);
+            Assert.IsTrue(unpacker.Header.IsNil);
         }
 
         [Test]

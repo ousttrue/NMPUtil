@@ -17,32 +17,28 @@ namespace NMPUtil.MsgPack.Rpc
         public void Process(System.IO.Stream s, ArraySegment<Byte> bytes)
         {
             var unpacker=new MsgPackUnpacker(bytes);
-            if (!unpacker.IsArray)
+            if (!unpacker.Header.IsArray)
             {
                 throw new ArgumentException("is not array");
             }
-            if(unpacker.MemberCount!=4)
+            if(unpacker.Header.MemberCount!=4)
             {
-                throw new ArgumentException("array member is not 4. " + unpacker.MemberCount);
+                throw new ArgumentException("array member is not 4. " + unpacker.Header.MemberCount);
             }
             using (var sub = unpacker.GetSubUnpacker())
             {
-                sub.ParseHeadByte();
                 var type = sub.Unpack<Int32>();
                 if (type != 0)
                 {
                     throw new ArgumentException("is not request. " + type);
                 }
 
-                sub.ParseHeadByte();
                 var id = sub.Unpack<UInt32>();
 
-                sub.ParseHeadByte();
                 var key = String.Empty;
                 sub.Unpack(ref key);
 
-                sub.ParseHeadByte();
-                if (!sub.IsArray)
+                if (!sub.Header.IsArray)
                 {
                     throw new ArgumentException("parameter is not array !");
                 }
@@ -60,7 +56,7 @@ namespace NMPUtil.MsgPack.Rpc
 
                 using (var args = sub.GetSubUnpacker())
                 {
-                    func(args, sub.MemberCount, response);
+                    func(args, sub.Header.MemberCount, response);
                 }
 
                 var data=ms.ToArray();
@@ -68,7 +64,7 @@ namespace NMPUtil.MsgPack.Rpc
             }
         }
 
-        public delegate void RpcCall(SubMsgPackUnpacker args, UInt32 count, MsgPackPacker result);
+        public delegate void RpcCall(MsgPackUnpacker args, UInt32 count, MsgPackPacker result);
 
         Dictionary<String, RpcCall> _funcMap = new Dictionary<string, RpcCall>();
 
@@ -77,9 +73,8 @@ namespace NMPUtil.MsgPack.Rpc
             var gmi1 = MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new[] { typeof(A1) });
             var gmi2 = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new[] { typeof(A1) });
 
-            RpcCall msgpackCall = (SubMsgPackUnpacker args, UInt32 count, MsgPackPacker result) =>
+            RpcCall msgpackCall = (MsgPackUnpacker args, UInt32 count, MsgPackPacker result) =>
             {
-                args.ParseHeadByte();
                 var a1 = default(A1);
                 if (typeof(A1).IsValueType)
                 {
@@ -92,7 +87,6 @@ namespace NMPUtil.MsgPack.Rpc
                     a1 = (A1)invokeArgs[0];
                 }
 
-                args.ParseHeadByte();
                 var a2 = default(A2);
                 if (typeof(A2).IsValueType)
                 {

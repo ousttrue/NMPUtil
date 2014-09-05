@@ -39,7 +39,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NetworkEndianArraySegmentReader.cs" />
     <Compile Include="MsgPack\MsgPackFormat.cs" />
+    <Compile Include="MsgPack\MsgPackHeader.cs" />
     <Compile Include="MsgPack\MsgPackPacker.cs" />
     <Compile Include="MsgPack\MsgPackPackerAttribute.cs" />
     <Compile Include="MsgPack\MsgPackUnpacker.cs" />

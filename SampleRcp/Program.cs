@@ -76,13 +76,9 @@ namespace SampleRcp
                 var unpacker = new MsgPackUnpacker(t.Result);
                 using (var sub = unpacker.GetSubUnpacker())
                 {
-                    sub.ParseHeadByte();
                     sub.Unpack<Int32>();
-                    sub.ParseHeadByte();
                     sub.Unpack<UInt32>();
-                    sub.ParseHeadByte();
                     sub.Unpack<Int32>();
-                    sub.ParseHeadByte();
                     var result = sub.Unpack<Int32>();
                     Console.WriteLine("result " + result);
                 }

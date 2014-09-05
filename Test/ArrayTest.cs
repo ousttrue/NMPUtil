@@ -30,7 +30,7 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes);
 
-            var a=new Object[unpacker.MemberCount];
+            var a=new Object[unpacker.Header.MemberCount];
             unpacker.Unpack(ref a);
 
             Assert.AreEqual(4, a.Length);

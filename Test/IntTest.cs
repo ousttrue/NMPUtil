@@ -54,7 +54,7 @@ namespace UnitTest
                 var bytes=ms.ToArray();
 
                 var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
-                Assert.AreEqual(MsgPackFormat.NEGATIVE_FIXNUM, unpacker.Format);
+                Assert.AreEqual(MsgPackFormat.NEGATIVE_FIXNUM, unpacker.Header.Format);
 
                 var j=unpacker.Unpack<sbyte>();
                 Assert.AreEqual(i, j);

@@ -32,7 +32,7 @@ namespace UnitTest
             var bytes = ms.ToArray();
 
             var unpacker = new MsgPackUnpacker(bytes);
-            Assert.IsTrue(unpacker.IsMap);
+            Assert.IsTrue(unpacker.Header.IsMap);
 
             var dst = new Dictionary<String, Object>();
             unpacker.Unpack(ref dst);

@@ -30,16 +30,16 @@ namespace UnitTest
 
             var unpacker = new MsgPackUnpacker(bytes.Take(2));
             
-            Assert.Throws<MsgPackUnpacker.NotEnoughBytesException>(() =>
+            Assert.Throws<NMPUtil.NetworkEndianArraySegmentReader.NotEnoughBytesException>(() =>
                 {
-                    var o=new Object[unpacker.MemberCount];
+                    var o=new Object[unpacker.Header.MemberCount];
                     unpacker.Unpack(ref o);
                 }
                );
 
             unpacker=new MsgPackUnpacker(bytes);
 
-            var a=new Object[unpacker.MemberCount];
+            var a=new Object[unpacker.Header.MemberCount];
             unpacker.Unpack(ref a);
 
             Assert.AreEqual(4, a.Length);
@@ -47,8 +47,6 @@ namespace UnitTest
             Assert.AreEqual(1, a[1]);
             Assert.False((Boolean)a[2]);
             Assert.AreEqual(null, a[3]);
-
-            Assert.AreEqual(0, unpacker.GetRemain().Count);
         }
     }
 }
