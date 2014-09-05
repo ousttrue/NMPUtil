@@ -397,7 +397,7 @@ namespace NMPUtil.MsgPack
 
         static public void AddUnpackArray<T>(UnpackerForValueTypeDelegate<T> unpacker)
         {
-            _unpackArrayMapVal.Add(typeof(T), unpacker);
+            _unpackArrayMapVal[typeof(T)]=unpacker;
         }
         #endregion
 

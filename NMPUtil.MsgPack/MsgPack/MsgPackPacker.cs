@@ -30,7 +30,7 @@ namespace NMPUtil.MsgPack
         }
 
         public delegate void PackerDelegate(MsgPackPacker packer, Object o);
-        public static Dictionary<Type, PackerDelegate> TypeMap = new Dictionary<Type, PackerDelegate>()
+        public static Dictionary<Type, PackerDelegate> _typeMap = new Dictionary<Type, PackerDelegate>()
                 {
                     // float
                     {typeof(Double), (MsgPackPacker packer, Object o) =>{
@@ -91,6 +91,11 @@ namespace NMPUtil.MsgPack
                         packer.Pack((Double)o);
                     }}
                 };
+
+        static public void AddPack<T>(PackerDelegate callback)
+        {
+            _typeMap[typeof(T)]=callback;
+        }
 
         public void PackNil()
         {
@@ -280,9 +285,9 @@ namespace NMPUtil.MsgPack
             }
 
             var type = o.GetType();
-            if (TypeMap.ContainsKey(type))
+            if (_typeMap.ContainsKey(type))
             {
-                TypeMap[type](this, o);
+                _typeMap[type](this, o);
                 return;
             }
 
@@ -294,7 +299,7 @@ namespace NMPUtil.MsgPack
                 {
                     var callback = (PackerDelegate)m.CreateDelegate(typeof(PackerDelegate));
                     callback(this, o);
-                    TypeMap.Add(type, callback);
+                    _typeMap.Add(type, callback);
                     return;
                 }
             }

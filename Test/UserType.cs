@@ -111,15 +111,16 @@ namespace UnitTest
             };
 
             // register pack System.Drawing.Color
-            MsgPackPacker.TypeMap[typeof(System.Drawing.Color)]= (MsgPackPacker p, Object o) =>
-            {
-                var color=(System.Drawing.Color)o;
-                p.Pack_Array(4);
-                p.Pack(color.A);
-                p.Pack(color.R);
-                p.Pack(color.G);
-                p.Pack(color.B);
-            };
+            MsgPackPacker.AddPack<System.Drawing.Color>(
+                (MsgPackPacker p, Object o) =>
+                {
+                    var color = (System.Drawing.Color)o;
+                    p.Pack_Array(4);
+                    p.Pack(color.A);
+                    p.Pack(color.R);
+                    p.Pack(color.G);
+                    p.Pack(color.B);
+                });
             MsgPackUnpacker.AddUnpackArray<System.Drawing.Color>(
                 (MsgPackUnpacker u, UInt32 size) =>
                 {
