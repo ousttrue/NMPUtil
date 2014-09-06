@@ -1,5 +1,5 @@
 # MsgPack.Net
-- https://github.com/msgpack/msgpack/blob/master/spec.md
+* https://github.com/msgpack/msgpack/blob/master/spec.md
 
 MsgPackのC#実装。
 
@@ -11,6 +11,8 @@ MsgPackのC#実装。
 # 使い方
 ## Pack
 
+sample
+
     var ms = new MemoryStream();
     var packer = new MsgPackPacker(ms);
     packer.Pack_Array(4);
@@ -20,20 +22,19 @@ MsgPackのC#実装。
     packer.PackNil();
     var bytes = ms.ToArray();
     
-## Unpack(参照型)
+## Unpack
+
+sample
 
     var unpacker = new MsgPackUnpacker(bytes);
     
-    var a=new Object[unpacker.MemberCount];
-    unpacker.Unpack(ref a);
+    var a=unpacker.Unpack<Object[]>();
     
     Assert.AreEqual(4, a.Length);
     Assert.AreEqual(0, a[0]);
     Assert.AreEqual(1, a[1]);
     Assert.False((Boolean)a[2]);
     Assert.AreEqual(null, a[3]);
-
-## Unpack(値型)
 
 ## Traverse
 
@@ -45,6 +46,8 @@ MsgPackのC#実装。
 
 * https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md
 
+sample
+ 
     // server
     var server = new MsgPackRpcServer();
     server.Dispatcher.RegisterFunc("add", (int a, int b) => { return a + b; });
