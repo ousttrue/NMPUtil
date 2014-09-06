@@ -237,19 +237,19 @@ namespace NMPUtil.MsgPack
                 {
                     var o = (T)Activator.CreateInstance(typeof(T)
                         , new Object[]{ (Int32)Header.MemberCount });
-                    Unpack<T>(ref o);
+                    UnpackByRef<T>(ref o);
                     return o;
                 }
                 else
                 {
                     var o = (T)Activator.CreateInstance<T>();
-                    Unpack<T>(ref o);
+                    UnpackByRef<T>(ref o);
                     return o;
                 }
             }
         }
 
-        void Unpack<T>(ref T v)
+        void UnpackByRef<T>(ref T v)
         {
             if (v == null)
             {
