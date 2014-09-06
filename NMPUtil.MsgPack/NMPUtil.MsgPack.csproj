@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NMPUtil</RootNamespace>
-    <AssemblyName>NUtil.MsgPack</AssemblyName>
+    <AssemblyName>NMPUtil.MsgPack</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

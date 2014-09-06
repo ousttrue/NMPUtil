@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace NMPUtil.MsgPack
 {
@@ -297,7 +294,18 @@ namespace NMPUtil.MsgPack
                 var a=m.GetCustomAttribute<MsgPackPackerAttribute>();
                 if (a != null)
                 {
-                    var callback = (PackerDelegate)m.CreateDelegate(typeof(PackerDelegate));
+                    //var callback = (PackerDelegate)m.CreateDelegate(typeof(PackerDelegate));
+                    PackerDelegate callback = (MsgPackPacker packer, Object target) =>
+                    {
+                        try
+                        {
+                            m.Invoke(this, new Object[] { packer, target });
+                        }
+                        catch(TargetInvocationException ex)
+                        {
+                            throw ex.InnerException;
+                        }
+                    };
                     callback(this, o);
                     _typeMap.Add(type, callback);
                     return;

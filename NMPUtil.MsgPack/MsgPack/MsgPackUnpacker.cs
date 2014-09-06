@@ -2,10 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace NMPUtil.MsgPack
 {
@@ -393,7 +391,18 @@ namespace NMPUtil.MsgPack
                 var a = m.GetCustomAttribute<MsgPackArrayUnpackerAttribute>();
                 if (a != null)
                 {
-                    var handler = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
+                    //var handler = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
+                    UnpackerForValueTypeDelegate<T> handler = (MsgPackUnpacker unpacker, UInt32 count) =>
+                    {
+                        try
+                        {
+                            return (T)m.Invoke(null, new Object[] { unpacker, count });
+                        }
+                        catch(TargetInvocationException ex)
+                        {
+                            throw ex.InnerException;
+                        }
+                    };
                     using (var sub = GetSubUnpacker())
                     {
                         var t = handler(sub, Header.MemberCount);
@@ -442,8 +451,18 @@ namespace NMPUtil.MsgPack
                 var et = typeof(T).GetElementType();
                 var gmi = GetType().GetMethod("UnpackArrayAsArray");
                 var mi = gmi.MakeGenericMethod(new Type[] { et });
-                var handler = (UnpackerForReferenceTypeDelegate<T>)mi.CreateDelegate(typeof(UnpackerForReferenceTypeDelegate<T>));
-
+                //var handler = (UnpackerForReferenceTypeDelegate<T>)mi.CreateDelegate(typeof(UnpackerForReferenceTypeDelegate<T>));
+                UnpackerForReferenceTypeDelegate<T> handler = (T target, MsgPackUnpacker unpacker, UInt32 count) =>
+                {
+                    try
+                    {
+                        mi.Invoke(null, new Object[] { target, unpacker, count });
+                    }
+                    catch(TargetInvocationException e)
+                    {
+                        throw e.InnerException;
+                    }
+                };
                 using (var sub = GetSubUnpacker())
                 {
                     handler(t, sub, Header.MemberCount);
@@ -457,7 +476,18 @@ namespace NMPUtil.MsgPack
                 var et = typeof(T).GetGenericArguments()[0];
                 var gmi = GetType().GetMethod("UnpackArrayAsList");
                 var mi = gmi.MakeGenericMethod(new Type[] { et });
-                var handler = (UnpackerForReferenceTypeDelegate<T>)mi.CreateDelegate(typeof(UnpackerForReferenceTypeDelegate<T>));
+                //var handler = (UnpackerForReferenceTypeDelegate<T>)mi.CreateDelegate(typeof(UnpackerForReferenceTypeDelegate<T>));
+                UnpackerForReferenceTypeDelegate<T> handler = (T target, MsgPackUnpacker unpacker, UInt32 count) =>
+                {
+                    try
+                    {
+                        mi.Invoke(null, new Object[] { target, unpacker, count });
+                    }
+                    catch(TargetInvocationException ex)
+                    {
+                        throw ex.InnerException;
+                    }
+                };
 
                 using (var sub = GetSubUnpacker())
                 {
