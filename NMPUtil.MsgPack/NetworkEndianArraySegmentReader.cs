@@ -50,7 +50,8 @@ namespace NMPUtil
             {
                 throw new NotEnoughBytesException("ReadBytes " + size);
             }
-            var b = _view.Skip(Pos).Take(size);
+            //var b = _view.Skip(Pos).Take(size);
+            var b = _view.Array.Skip(_view.Offset + Pos).Take(size);
             Advance(size);
             return b;
         }
