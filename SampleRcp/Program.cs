@@ -25,13 +25,24 @@ namespace SampleRcp
 
             // client
             var client=new MsgPackRpcClient();
-            var task=client.Connect("127.0.0.1", 8080);
-            task.Wait();
+            var tcs = new TaskCompletionSource<int>();
+            client.ConnectedEvent += (Object o, EventArgs e) =>
+            {
+                tcs.SetResult(0);
+            };
+            client.Connect("127.0.0.1", 8080);
+            tcs.Task.Wait();
             Console.WriteLine("connected");
 
-            var callTask=client.Call<Int32>("add", 2244, 1234);
-            callTask.Wait();
-            Console.WriteLine("response: " + callTask.Result);
+            var recvTcs= new TaskCompletionSource<Int32>();
+            MsgPackRpcClient.ResponseCallback callback=(MsgPackUnpacker unpacker)=>{
+                recvTcs.SetResult(unpacker.Unpack<Int32>());
+            };
+            client.Call(callback, "add", 2244, 1234);
+
+            var task = recvTcs.Task;
+            task.Wait();
+            Console.WriteLine("response: " + task.Result);
 
             Thread.Sleep(2000);
         }

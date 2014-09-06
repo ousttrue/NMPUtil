@@ -1,9 +1,10 @@
 ﻿using NMPUtil.Streams;
 using NMPUtil.Tcp;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
-using System.Threading.Tasks;
+
 
 namespace NMPUtil.MsgPack.Rpc
 {
@@ -12,21 +13,77 @@ namespace NMPUtil.MsgPack.Rpc
         NMPUtil.Tcp.TcpSocketConnector _connector = new NMPUtil.Tcp.TcpSocketConnector();
         AsyncStream _asyncStream;
 
-        public Task<AsyncStream> Connect(String host, Int32 port)
+        public event EventHandler ConnectedEvent;
+        void EmitConnectedEvent()
         {
-            var tcs = new TaskCompletionSource<AsyncStream>();
-            _connector.Connect(TcpUtil.EndPoint("127.0.0.1", 8080));
+            var tmp = ConnectedEvent;
+            if (tmp != null)
+            {
+                tmp(this, EventArgs.Empty);
+            }
+        }
+
+        public void Connect(String host, Int32 port)
+        {
             _connector.ConnectedEvent += (Object o, TcpSocketEventArgs e) =>
             {
                 var stream = new NetworkStream(e.Socket, true);
                 _asyncStream = new AsyncStream(stream);
+                _asyncStream.ReadEvent += onRead;
                 _asyncStream.BeginRead();
-                tcs.SetResult(_asyncStream);
+                EmitConnectedEvent();
             };
-            return tcs.Task;
+            _connector.Connect(TcpUtil.EndPoint("127.0.0.1", 8080));
         }
 
-        public Task<T> Call<T>(String func, params Object[] args)
+        public delegate void ResponseCallback(MsgPackUnpacker unpacker);
+        Dictionary<UInt32, ResponseCallback> _requestMap=new Dictionary<uint,ResponseCallback>();
+
+        void onRead(Object o, StreamReadEventArgs e)
+        {
+            var unpacker = new MsgPackUnpacker(e.Bytes);
+            if (!unpacker.Header.IsArray)
+            {
+                throw new InvalidOperationException("should array");
+            }
+            using (var sub = unpacker.GetSubUnpacker())
+            {
+                var type = sub.Unpack<Int32>();
+                switch (type)
+                {
+                    case 0:
+                        // request. what ?
+                        throw new InvalidOperationException("request received");
+
+                    case 1:
+                        // response
+                        {
+                            var id=sub.Unpack<UInt32>();
+                            var error=sub.Unpack<UInt32>();
+                            if(error!=0){
+                                // error occured
+                                throw new InvalidOperationException("error result");
+                            }
+                            else{
+                                // success
+                                _requestMap[id](sub);
+                            }
+                        }
+                        break;
+
+                    case 2:
+                        // notifycation
+                        {
+                            throw new NotImplementedException("notifycation is not");
+                        }
+                        break;
+                }
+            }
+        }
+
+        UInt32 _id = 1;
+
+        public void Call(ResponseCallback callback, String func, params Object[] args)
         {
             if (_asyncStream == null)
             {
@@ -34,34 +91,14 @@ namespace NMPUtil.MsgPack.Rpc
             }
             Console.WriteLine(String.Format("call {0}({1}) ...", func, String.Join(", ", args)));
 
-            // read task
-            var tcs = new TaskCompletionSource<T>();
-            var onRead = new EventHandler<StreamReadEventArgs>(
-                (Object o, StreamReadEventArgs e) =>
-                {
-                    var unpacker = new MsgPackUnpacker(e.Bytes);
-                    if (!unpacker.Header.IsArray)
-                    {
-                        throw new InvalidOperationException("should array");
-                    }
-                    using (var sub = unpacker.GetSubUnpacker())
-                    {
-                        sub.Unpack<Int32>();
-                        sub.Unpack<UInt32>();
-                        sub.Unpack<Int32>();
-                        var result = sub.Unpack<Int32>();
-                        tcs.SetResult((T)(Object)result);
-                    }
-                });
-
-            _asyncStream.ReadEvent += onRead;
-
             // call
             var ms = new MemoryStream();
             var packer = new MsgPackPacker(ms);
             packer.Pack_Array(4);
             packer.Pack((Byte)0);
-            packer.Pack(1);
+            var id=_id++;
+            packer.Pack(id);
+            _requestMap[id] = callback;
             packer.Pack(func);
             packer.Pack_Array((UInt32)args.Length);
             foreach (var a in args)
@@ -70,13 +107,6 @@ namespace NMPUtil.MsgPack.Rpc
             }
             var bytes = ms.ToArray();
             _asyncStream.Stream.Write(bytes, 0, bytes.Length);
-
-            return tcs.Task.ContinueWith(t =>
-            {
-                _asyncStream.ReadEvent -= onRead;
-                return t.Result;
-            });
         }
     }
-
 }
