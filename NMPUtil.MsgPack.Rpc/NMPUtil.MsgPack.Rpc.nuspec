@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>NMPUtil.MsgPack.Rpc</id>
+        <version>1.0.1</version>
+        <authors>ousttrue</authors>
+        <description>MsgPack-Rpc implementation for .Net</description>
+        <language>en-US</language>
+        <tags>msgpack</tags>
+        <projectUrl>https://github.com/ousttrue/NMPUtil.MsgPack</projectUrl>
+    </metadata>
+    <files>
+        <file src="bin\Release\*.dll" target="lib/net45" />
+    </files>
+</package>
