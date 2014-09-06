@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="MsgPack\Rpc\MsgPackRpcClient.cs" />
     <Compile Include="MsgPack\Rpc\MsgPackRpcDispatcher.cs" />
+    <Compile Include="MsgPack\Rpc\MsgPackRpcServer.cs" />
     <Compile Include="MsgPack\Rpc\Request.cs" />
     <Compile Include="MsgPack\Rpc\Response.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

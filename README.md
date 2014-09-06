@@ -10,6 +10,7 @@ MsgPackのC#実装。
 
 # 使い方
 ## Pack
+
     var ms = new MemoryStream();
     var packer = new MsgPackPacker(ms);
     packer.Pack_Array(4);
@@ -20,6 +21,7 @@ MsgPackのC#実装。
     var bytes = ms.ToArray();
     
 ## Unpack(参照型)
+
     var unpacker = new MsgPackUnpacker(bytes);
     
     var a=new Object[unpacker.MemberCount];
@@ -40,5 +42,23 @@ MsgPackのC#実装。
 # 自前の型のPack, Unpack
 
 # RPC
+
 - https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md
+
+    // server
+    var server = new MsgPackRpcServer();
+    server.Dispatcher.RegisterFunc("add", (int a, int b) => { return a + b; });
+    server.Start(8080);
+    
+    // client
+    var client=new MsgPackRpcClient();
+    var task=client.Connect("127.0.0.1", 8080);
+    task.Wait();
+    Console.WriteLine("connected");
+    
+    var callTask=client.Call<Int32>("add", 2244, 1234);
+    callTask.Wait();
+    Console.WriteLine("response: " + callTask.Result);
+    
+    Thread.Sleep(2000);
 
