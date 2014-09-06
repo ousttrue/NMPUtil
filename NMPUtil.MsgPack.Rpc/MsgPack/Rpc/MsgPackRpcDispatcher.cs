@@ -58,7 +58,7 @@ namespace NMPUtil.MsgPack.Rpc
 
         void Process(System.IO.Stream s, Byte[] bytes)
         {
-            var unpacker=new MsgPackUnpacker(bytes);
+            var unpacker=new MsgPackUnpacker(bytes, null);
             if (!unpacker.Header.IsArray)
             {
                 throw new ArgumentException("is not array");

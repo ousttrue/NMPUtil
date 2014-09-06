@@ -3,9 +3,16 @@
 
 MsgPackのC#実装。
 
+# UnityMemo
+いくつか使えない要素を置き換えた。
+
+* System.Threading.Tasks -> event
+* MethodInfo.GetCustomAttributes<> -> GetCustomAttributes
+* MethodInfo.CreateDelegate -> Invoke
+* ArraySegmentでLINQが効かない件
+
 # ToDo
 
-* Unityで試す
 * NuGetに登録する
 
 # 使い方
@@ -40,7 +47,95 @@ sample
 
 # 既存の型のPack, Unpack
 
+    // register pack System.Drawing.Color
+    MsgPackPacker.AddPack<System.Drawing.Color>(
+        (MsgPackPacker p, Object o) =>
+        {
+            var color = (System.Drawing.Color)o;
+            p.Pack_Array(4);
+            p.Pack(color.A);
+            p.Pack(color.R);
+            p.Pack(color.G);
+            p.Pack(color.B);
+        });
+    MsgPackUnpacker.AddUnpackArray<System.Drawing.Color>(
+        (MsgPackUnpacker u, UInt32 size) =>
+        {
+            if (size != 4)
+            {
+                throw new ArgumentException("size");
+            }
+            var a = u.Unpack<Byte>();
+            var r = u.Unpack<Byte>();
+            var g = u.Unpack<Byte>();
+            var b = u.Unpack<Byte>();
+            return System.Drawing.Color.FromArgb(a, r, g, b);
+        });
+
 # 自前の型のPack, Unpack
+
+    struct Vector3
+    {
+        Single _x;
+        public Single X
+        {
+            get { return _x;  }
+            set { _x = value; }
+        }
+        Single _y;
+        public Single Y
+        {
+            get { return _y; }
+            set { _y = value; }
+        }
+        Single _z;
+        public Single Z
+        {
+            get { return _z; }
+            set { _z = value; }
+        }
+    
+        public override bool Equals(object obj)
+        {
+            if (obj is Vector3)
+            {
+                var s = (Vector3)obj;
+                return s.X == X && s.Y == Y && s.Z == Z;
+            }
+            return base.Equals(obj);
+        }
+    
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+    
+        [MsgPackPacker]
+        static public void Packer(MsgPackPacker p, Object o)
+        {
+            var v = (Vector3)o;
+            p.Pack_Array(3);
+            p.Pack(v._x);
+            p.Pack(v._y);
+            p.Pack(v._z);
+        }
+    
+        [MsgPackArrayUnpacker]
+        static public Vector3 Unpack(MsgPackUnpacker u, UInt32 count)
+        {
+            if (count != 3)
+            {
+                throw new ArgumentException("count");
+            }
+    
+            var v = new Vector3();
+            v._x = u.Unpack<Single>();
+            v._y = u.Unpack<Single>();
+            v._z = u.Unpack<Single>();
+    
+            return v;
+        }
+    }
 
 # RPC
 

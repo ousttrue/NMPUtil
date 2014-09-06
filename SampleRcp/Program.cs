@@ -1,4 +1,4 @@
-﻿#define USE_SERVER
+﻿//#define USE_SERVER
 
 
 using NMPUtil.MsgPack;
