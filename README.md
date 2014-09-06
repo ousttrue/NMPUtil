@@ -43,7 +43,7 @@ MsgPackのC#実装。
 
 # RPC
 
-- https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md
+* https://github.com/msgpack-rpc/msgpack-rpc/blob/master/spec.md
 
     // server
     var server = new MsgPackRpcServer();
