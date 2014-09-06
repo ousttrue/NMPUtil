@@ -28,7 +28,7 @@ namespace NMPUtil.MsgPack.Rpc
             {
                 var s = o as AsyncStream;
                 Console.WriteLine(String.Format("read {0} bytes", e.Bytes.Count));
-                Dispatcher.Process(s.Stream, e.Bytes);
+                Dispatcher.Enqueue(s.Stream, e.Bytes);
             };
 
             Dispatcher = new MsgPackRpcDispatcher();
@@ -38,6 +38,11 @@ namespace NMPUtil.MsgPack.Rpc
         {
             _listener.Bind(TcpUtil.EndPoint("", port));
             _listener.BeginAccept();
+        }
+
+        public void Update()
+        {
+            Dispatcher.Update();
         }
     }
 }

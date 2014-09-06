@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -6,12 +8,55 @@ namespace NMPUtil.MsgPack.Rpc
 {
     public partial class MsgPackRpcDispatcher
     {
+        class Message
+        {
+            public System.IO.Stream Stream
+            {
+                get;
+                set;
+            }
+
+            public Byte[] Bytes
+            {
+                get;
+                set;
+            }
+        }
+        Queue<Message> _queue = new Queue<Message>();
+
         public MsgPackRpcDispatcher()
         {
            
         }
 
-        public void Process(System.IO.Stream s, ArraySegment<Byte> bytes)
+        public void Enqueue(System.IO.Stream s, ArraySegment<Byte> bytes)
+        {
+            lock (((System.Collections.ICollection)_queue).SyncRoot)
+            {
+                _queue.Enqueue(new Message
+                {
+                    Stream=s,
+                    Bytes=bytes.Array.Skip(bytes.Offset).Take(bytes.Count).ToArray()
+                });
+            }
+        }
+
+        public void Update()
+        {
+            Message[] copy;
+            lock (((System.Collections.ICollection)_queue).SyncRoot)
+            {
+                copy=_queue.ToArray();
+                _queue.Clear();
+            }
+
+            foreach (var message in copy)
+            {
+                Process(message.Stream, message.Bytes);
+            }
+        }
+
+        void Process(System.IO.Stream s, Byte[] bytes)
         {
             var unpacker=new MsgPackUnpacker(bytes);
             if (!unpacker.Header.IsArray)
@@ -38,6 +83,7 @@ namespace NMPUtil.MsgPack.Rpc
                 {
                     throw new ArgumentException("parameter is not array !");
                 }
+
                 var func = _funcMap[key];
 
                 var ms = new MemoryStream();
