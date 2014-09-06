@@ -1,4 +1,7 @@
-﻿using NMPUtil.MsgPack;
+﻿#define USE_SERVER
+
+
+using NMPUtil.MsgPack;
 using NMPUtil.MsgPack.Rpc;
 using NMPUtil.Streams;
 using NMPUtil.Tcp;
@@ -12,18 +15,21 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
+
 namespace SampleRcp
 {
     class Program
     {
         static void Main(string[] args)
         {
-            var port = 18080;
+            var port = 8080;
 
+#if USE_SERVER
             // server
             var server = new MsgPackRpcServer();
             server.Dispatcher.RegisterFunc("add", (int a, int b) => { return a + b; });
             server.Start(port);
+#endif
 
             // client
             var client=new MsgPackRpcClient();
@@ -65,11 +71,17 @@ namespace SampleRcp
 
                 Thread.Sleep(1000);
 
+#if USE_SERVER
                 // execute in main process
                 server.Update();
+#endif
             }
 
             Thread.Sleep(2000);
+
+#if USE_SERVER
+            server.Shutdown();
+#endif      
         }
     }
 }

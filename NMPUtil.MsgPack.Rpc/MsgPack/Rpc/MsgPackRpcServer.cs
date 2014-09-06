@@ -44,5 +44,10 @@ namespace NMPUtil.MsgPack.Rpc
         {
             Dispatcher.Update();
         }
+
+        public void Shutdown()
+        {
+            _listener.ShutDown();
+        }
     }
 }

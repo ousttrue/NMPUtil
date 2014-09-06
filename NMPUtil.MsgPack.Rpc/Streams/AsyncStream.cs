@@ -41,7 +41,10 @@ namespace NMPUtil.Streams
 
         public void Close()
         {
-            _s.EndRead(_readIR);
+            if (_readIR != null)
+            {
+                _s.EndRead(_readIR);
+            }
             _s.Close();
             EmitCloseEvent();
         }
@@ -51,7 +54,18 @@ namespace NMPUtil.Streams
             Action<IAsyncResult> callback = (IAsyncResult ar) =>
             {
                 var self = ar.AsyncState as AsyncStream;
-                var readbytes=self._s.EndRead(ar);
+                int readbytes;
+                try
+                {
+                    readbytes = self._s.EndRead(ar);
+                }
+                catch(IOException ex)
+                {
+                    // ERROR
+                    Close();
+                    return;
+                }
+                self._readIR = null;
                 if (readbytes == 0)
                 {
                     // closed
