@@ -32,45 +32,16 @@ namespace NMPUtil.MsgPack
             set;
         }
 
-        static MethodInfo _genericReferenceUnpacker;
-        static public MethodInfo GenericReferenceUnpacker
+        static MethodInfo _genericUnpacker;
+        static public MethodInfo GenericUnpacker
         {
             get
             {
-                if (_genericReferenceUnpacker == null)
+                if (_genericUnpacker==null)
                 {
-                    foreach (var mi in typeof(MsgPackUnpacker).GetMethods().Where(mi => mi.Name == "Unpack"))
-                    {
-                        if (mi.ReturnType == typeof(void))
-                        {
-                            _genericReferenceUnpacker = mi;
-                        }
-                    }
+                    _genericUnpacker=typeof(MsgPackUnpacker).GetMethods().First(mi => mi.Name == "Unpack");
                 }
-                return _genericReferenceUnpacker;
-            }
-        }
-
-        static MethodInfo _genericValueUnpacker;
-        static public MethodInfo GenericValueUnpacker
-        {
-            get
-            {
-                if (_genericValueUnpacker==null)
-                {
-                    foreach (var mi in typeof(MsgPackUnpacker).GetMethods().Where(mi => mi.Name == "Unpack"))
-                    {
-                        if (mi.ReturnType == typeof(void))
-                        {
-
-                        }
-                        else
-                        {
-                            _genericValueUnpacker = mi;
-                        }
-                    }
-                }
-                return _genericValueUnpacker;
+                return _genericUnpacker;
             }
         }
 
@@ -85,6 +56,7 @@ namespace NMPUtil.MsgPack
         MsgPackUnpacker _parent;
         public MsgPackUnpacker GetSubUnpacker()
         {
+            var a=Header;
             return new MsgPackUnpacker(_reader.GetRemain(), this);
         }
 
@@ -576,7 +548,7 @@ namespace NMPUtil.MsgPack
                         var pi = type.GetProperty(key);
                         {
                             if (pi != null){
-                                var gmi =MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new Type[] { 
+                                var gmi =MsgPackUnpacker.GenericUnpacker.MakeGenericMethod(new Type[] { 
                                     pi.PropertyType
                                 });
                                 var v=gmi.Invoke(unpacker, null);

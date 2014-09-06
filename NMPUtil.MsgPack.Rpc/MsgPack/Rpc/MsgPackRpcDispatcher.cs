@@ -69,41 +69,15 @@ namespace NMPUtil.MsgPack.Rpc
 
         public void RegisterFunc<A1, A2, R>(String key, Func<A1, A2, R> func)
         {
-            var gmi1 = MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new[] { typeof(A1) });
-            var gmi2 = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new[] { typeof(A1) });
-
+            var gmi1 = MsgPackUnpacker.GenericUnpacker.MakeGenericMethod(new[] { typeof(A1) });
+            var gmi2 = MsgPackUnpacker.GenericUnpacker.MakeGenericMethod(new[] { typeof(A2) });
             RpcCall msgpackCall = (MsgPackUnpacker args, UInt32 count, MsgPackPacker result) =>
             {
-                var a1 = default(A1);
-                if (typeof(A1).IsValueType)
-                {
-                    a1 = (A1)gmi1.Invoke(args, null);
-                }
-                else
-                {
-                    var invokeArgs = new Object[] { Activator.CreateInstance<A1>() };
-                    gmi2.Invoke(args, invokeArgs);
-                    a1 = (A1)invokeArgs[0];
-                }
-
-                var a2 = default(A2);
-                if (typeof(A2).IsValueType)
-                {
-                    var gmi = MsgPackUnpacker.GenericValueUnpacker.MakeGenericMethod(new[] { typeof(A2) });
-                    a2 = (A2)gmi.Invoke(args, null);
-                }
-                else
-                {
-                    var gmi = MsgPackUnpacker.GenericReferenceUnpacker.MakeGenericMethod(new[] { typeof(A2) });
-                    var invokeArgs = new Object[] { Activator.CreateInstance<A2>() };
-                    gmi.Invoke(args, invokeArgs);
-                    a2 = (A2)invokeArgs[0];
-                }
-
+                var a1 = (A1)gmi1.Invoke(args, null);
+                var a2 = (A2)gmi2.Invoke(args, null);
                 R r = func(a1, a2);
                 result.Pack(r);
             };
-
             _funcMap.Add(key, msgpackCall);
         }
     }
