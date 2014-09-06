@@ -5,7 +5,6 @@ MsgPackのC#実装。
 
 # ToDo
 
-* RPC実装
 * Unityで試す
 * NuGetに登録する
 

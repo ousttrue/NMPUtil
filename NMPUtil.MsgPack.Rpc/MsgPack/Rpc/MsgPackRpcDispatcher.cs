@@ -60,6 +60,7 @@ namespace NMPUtil.MsgPack.Rpc
 
                 var data=ms.ToArray();
                 s.Write(data, 0, data.Length);
+                Console.WriteLine(String.Format("write {0} bytes", data.Length));
             }
         }
 
