@@ -33,7 +33,7 @@ namespace NMPUtil.MsgPack.Rpc
                 _asyncStream.BeginRead();
                 EmitConnectedEvent();
             };
-            _connector.Connect(TcpUtil.EndPoint("127.0.0.1", 8080));
+            _connector.Connect(TcpUtil.EndPoint("127.0.0.1", port));
         }
 
         public delegate void ResponseCallback(MsgPackUnpacker unpacker);
@@ -89,7 +89,7 @@ namespace NMPUtil.MsgPack.Rpc
             {
                 throw new InvalidOperationException("not connected");
             }
-            Console.WriteLine(String.Format("call {0}({1}) ...", func, String.Join(", ", args)));
+            //Console.WriteLine(String.Format("call {0}({1}) ...", func, String.Join(", ", args)));
 
             // call
             var ms = new MemoryStream();

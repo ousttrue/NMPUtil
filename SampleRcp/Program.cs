@@ -18,10 +18,12 @@ namespace SampleRcp
     {
         static void Main(string[] args)
         {
+            var port = 18080;
+
             // server
             var server = new MsgPackRpcServer();
             server.Dispatcher.RegisterFunc("add", (int a, int b) => { return a + b; });
-            server.Start(8080);
+            server.Start(port);
 
             // client
             var client=new MsgPackRpcClient();
@@ -30,7 +32,7 @@ namespace SampleRcp
             {
                 tcs.SetResult(0);
             };
-            client.Connect("127.0.0.1", 8080);
+            client.Connect("127.0.0.1", port);
             tcs.Task.Wait();
             Console.WriteLine("connected");
 

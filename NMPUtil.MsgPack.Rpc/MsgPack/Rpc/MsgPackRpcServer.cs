@@ -36,7 +36,7 @@ namespace NMPUtil.MsgPack.Rpc
 
         public void Start(Int32 port)
         {
-            _listener.Bind(TcpUtil.EndPoint("", 8080));
+            _listener.Bind(TcpUtil.EndPoint("", port));
             _listener.BeginAccept();
         }
     }
