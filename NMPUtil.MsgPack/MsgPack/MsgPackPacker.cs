@@ -291,8 +291,8 @@ namespace NMPUtil.MsgPack
             // search MsgPackPackerAttribute
             foreach(var m in type.GetMethods())
             {
-                var a=m.GetCustomAttribute<MsgPackPackerAttribute>();
-                if (a != null)
+                var a=m.GetCustomAttributes(typeof(MsgPackPackerAttribute), true);
+                if (a.Count()>0)
                 {
                     //var callback = (PackerDelegate)m.CreateDelegate(typeof(PackerDelegate));
                     PackerDelegate callback = (MsgPackPacker packer, Object target) =>
@@ -330,7 +330,7 @@ namespace NMPUtil.MsgPack
                 var pilist = type.GetProperties(
                     BindingFlags.Public | BindingFlags.Instance).Where(pi =>
                 {
-                    var nsAttrs = pi.GetCustomAttributes(typeof(NonSerializedAttribute), false);
+                    var nsAttrs = pi.GetCustomAttributes(typeof(NonSerializedAttribute), true);
                     return nsAttrs.Length == 0;
                 }).ToArray();
 

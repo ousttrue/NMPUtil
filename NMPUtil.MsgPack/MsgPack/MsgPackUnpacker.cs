@@ -388,8 +388,8 @@ namespace NMPUtil.MsgPack
 
             foreach (var m in typeof(T).GetMethods())
             {
-                var a = m.GetCustomAttribute<MsgPackArrayUnpackerAttribute>();
-                if (a != null)
+                var a = m.GetCustomAttributes(typeof(MsgPackArrayUnpackerAttribute), true);
+                if (a.Count()>0)
                 {
                     //var handler = (UnpackerForValueTypeDelegate<T>)m.CreateDelegate(typeof(UnpackerForValueTypeDelegate<T>));
                     UnpackerForValueTypeDelegate<T> handler = (MsgPackUnpacker unpacker, UInt32 count) =>
