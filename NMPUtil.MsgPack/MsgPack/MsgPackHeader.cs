@@ -7,13 +7,13 @@ namespace NMPUtil.MsgPack
         public Byte HeadByte
         {
             get;
-            private set;
+            set;
         }
 
         public MsgPackFormat Format
         {
             get;
-            private set;
+            set;
         }
 
         public Boolean IsNil
@@ -66,7 +66,7 @@ namespace NMPUtil.MsgPack
             {
                 return _memberCount;
             }
-            private set
+            set
             {
                 _memberCount = value;
             }
@@ -86,6 +86,11 @@ namespace NMPUtil.MsgPack
                         throw new InvalidOperationException();
                 }
             }
+        }
+
+        public MsgPackHeader()
+        {
+
         }
 
         public MsgPackHeader(NetworkEndianArraySegmentReader reader)

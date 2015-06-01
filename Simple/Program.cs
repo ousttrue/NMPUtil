@@ -24,6 +24,20 @@ namespace Simple
         public bool MyProperty4 { get; set; }
     }
 
+    struct Header
+    {
+        public MsgPackFormat Format
+        {
+            get;
+            set;
+        }
+
+        public UInt32 MemberCount
+        {
+            get;
+            set;
+        }
+    }
 
     class Program
     {
@@ -36,10 +50,20 @@ namespace Simple
             var bytes = ms.ToArray();
             Console.WriteLine(String.Join(",", bytes));
 
-            var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
-            var result = unpacker.Unpack<int>();
+            // unpack
+            {
+                var unpacker = new MsgPackUnpacker(new ArraySegment<Byte>(bytes));
+                var result = unpacker.Unpack<int>();
+                Console.WriteLine(result);
+            }
 
-            Console.WriteLine(result);
+            // DSL方式
+            {
+                var parser = from header in MsgPackParse.Header()
+                             select header;
+                var result = parser(new Input(bytes));
+                Console.WriteLine(result.Value.Format);
+            }
         }
     }
 }
