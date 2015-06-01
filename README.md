@@ -1,7 +1,14 @@
-# MsgPack.Net
+# NMPUtil(.Net MsgPack Utility)
 * https://github.com/msgpack/msgpack/blob/master/spec.md
-
 MsgPackのC#実装。
+
+# History
+* 20150601: rename NMPUtil.MsgPack to NMPUtil
+
+# ToDo
+* 例外を使うのをやめる
+* NuGetに登録する
+* UnityのSampleプロジェクト
 
 # UnityMemo
 いくつか使えない要素を置き換えた。
@@ -10,10 +17,6 @@ MsgPackのC#実装。
 * MethodInfo.GetCustomAttributes<> -> GetCustomAttributes
 * MethodInfo.CreateDelegate -> Invoke
 * ArraySegmentでLINQが効かない件
-
-# ToDo
-
-* NuGetに登録する
 
 # 使い方
 ## Pack
