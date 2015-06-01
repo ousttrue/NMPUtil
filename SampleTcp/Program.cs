@@ -3,6 +3,7 @@ using NMPUtil.Tcp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -28,7 +29,7 @@ namespace SampleTcp
                 streamManager.AddStream(stream);
                 Console.WriteLine("accepted");
             };
-            server.Bind(TcpUtil.EndPoint("", 8080));
+            server.Bind(new IPEndPoint(IPAddress.Any, 8080));
             server.BeginAccept();
 
             // setup client
@@ -41,7 +42,7 @@ namespace SampleTcp
                 streamManager.AddStream(stream);
                 tcs.SetResult(stream);
             };
-            client.Connect(TcpUtil.EndPoint("127.0.0.1", 8080));
+            client.Connect(new IPEndPoint(IPAddress.Loopback, 8080));
 
             // sending...
             var task = tcs.Task

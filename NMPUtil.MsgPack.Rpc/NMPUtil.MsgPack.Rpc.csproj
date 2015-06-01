@@ -51,7 +51,6 @@
     <Compile Include="Tcp\TcpSocketConnector.cs" />
     <Compile Include="Tcp\TcpSocketEventArgs.cs" />
     <Compile Include="Tcp\TcpSocketListener.cs" />
-    <Compile Include="Tcp\TcpUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NMPUtil.MsgPack\NMPUtil.MsgPack.csproj">

@@ -1,6 +1,7 @@
 ﻿using NMPUtil.Streams;
 using NMPUtil.Tcp;
 using System;
+using System.Net;
 using System.Net.Sockets;
 
 namespace NMPUtil.MsgPack.Rpc
@@ -36,7 +37,7 @@ namespace NMPUtil.MsgPack.Rpc
 
         public void Start(Int32 port)
         {
-            _listener.Bind(TcpUtil.EndPoint("", port));
+            _listener.Bind(new IPEndPoint(IPAddress.Any, port));
             _listener.BeginAccept();
         }
 

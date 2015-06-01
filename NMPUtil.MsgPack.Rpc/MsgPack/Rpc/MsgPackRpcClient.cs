@@ -3,6 +3,7 @@ using NMPUtil.Tcp;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 
 
@@ -33,7 +34,7 @@ namespace NMPUtil.MsgPack.Rpc
                 _asyncStream.BeginRead();
                 EmitConnectedEvent();
             };
-            _connector.Connect(TcpUtil.EndPoint("127.0.0.1", port));
+            _connector.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
         }
 
         public delegate void ResponseCallback(MsgPackUnpacker unpacker);
