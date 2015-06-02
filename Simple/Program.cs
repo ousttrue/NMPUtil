@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NMPUtil.MsgPack;
+using System;
 using System.IO;
-using NMPUtil.MsgPack;
-using NMPUtil.MsgPack.Rpc;
-using System.Diagnostics;
-using System.Net.Sockets;
-using NMPUtil.Streams;
-using NMPUtil.Tcp;
-using System.Threading;
 
 
 namespace Simple
@@ -59,10 +49,11 @@ namespace Simple
 
             // DSL方式
             {
-                var parser = from header in MsgPackParse.Header()
-                             select header;
+                var parser = from header in MsgPackParser.Header()
+                             from value in MsgPackParser.Body(header)
+                             select value;
                 var result = parser(new Input(bytes));
-                Console.WriteLine(result.Value.Format);
+                Console.WriteLine(result.Value);
             }
         }
     }

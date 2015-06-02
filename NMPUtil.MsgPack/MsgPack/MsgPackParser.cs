@@ -168,7 +168,7 @@ namespace NMPUtil.MsgPack
         }
     }
 
-    public static class MsgPackParse
+    public static class MsgPackParser
     {
         public static MsgPackParser<Byte> Byte()
         {
@@ -287,7 +287,7 @@ namespace NMPUtil.MsgPack
                     case MsgPackFormat.STR8:
                     case MsgPackFormat.BIN8:
                         {
-                            var parser = from count in MsgPackParse.Byte()
+                            var parser = from count in MsgPackParser.Byte()
                                          select count
                                        ;
                             var result = parser(i);
@@ -304,7 +304,7 @@ namespace NMPUtil.MsgPack
                     case MsgPackFormat.STR16:
                     case MsgPackFormat.BIN16:
                         {
-                            var parser = from count in MsgPackParse.UInt16()
+                            var parser = from count in MsgPackParser.UInt16()
                                          select count
                                        ;
                             var result = parser(i);
@@ -321,7 +321,7 @@ namespace NMPUtil.MsgPack
                     case MsgPackFormat.STR32:
                     case MsgPackFormat.BIN32:
                         {
-                            var parser = from count in MsgPackParse.UInt32()
+                            var parser = from count in MsgPackParser.UInt32()
                                          select count
                                        ;
                             var result = parser(i);
@@ -371,15 +371,23 @@ namespace NMPUtil.MsgPack
 
         public static MsgPackParser<MsgPackHeader> Header()
         {
-            return from headbyte in MsgPackParse.Byte()
-                   from format in MsgPackParse.Format(headbyte)
-                   from membercount in MsgPackParse.MemberCount(headbyte, format)
+            return from headbyte in MsgPackParser.Byte()
+                   from format in MsgPackParser.Format(headbyte)
+                   from membercount in MsgPackParser.MemberCount(headbyte, format)
                    select new MsgPackHeader
                    {
                        HeadByte = headbyte,
                        Format = format,
                        MemberCount = membercount,
                    };
+        }
+
+        public static MsgPackParser<Object> Body(MsgPackHeader header)
+        {
+            return i =>
+            {
+
+            };
         }
     }
 }

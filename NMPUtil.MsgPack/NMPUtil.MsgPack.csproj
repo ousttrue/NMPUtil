@@ -39,7 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MsgPack\MsgPackParse.cs" />
+    <Compile Include="MsgPack\MsgPackParser.cs" />
     <Compile Include="NetworkEndianArraySegmentReader.cs" />
     <Compile Include="MsgPack\MsgPackFormat.cs" />
     <Compile Include="MsgPack\MsgPackHeader.cs" />
